@@ -1,0 +1,546 @@
+"use client";
+
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useRouter } from "next/navigation";
+import { useState } from "react";
+import { Plus, Trash2, Save, Loader2 } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Separator } from "@/components/ui/separator";
+import { useToast } from "@/components/ui/use-toast";
+import { trialFormSchema, type TrialFormValues } from "@/lib/validations";
+import { createTrial, updateTrial } from "@/lib/actions";
+import { formatCurrency } from "@/lib/utils";
+import type { Trial } from "@/lib/types";
+
+interface TrialFormProps {
+  trial?: Trial;
+  trialNumber: string;
+}
+
+export function TrialForm({ trial, trialNumber }: TrialFormProps) {
+  const router = useRouter();
+  const { toast } = useToast();
+  const [saving, setSaving] = useState(false);
+  const isEditing = !!trial;
+
+  const form = useForm<TrialFormValues>({
+    resolver: zodResolver(trialFormSchema),
+    defaultValues: {
+      trial_number: trial?.trial_number || trialNumber,
+      date: trial?.date || new Date().toISOString().split("T")[0],
+      department: trial?.department || "",
+      lead_name: trial?.lead_name || "",
+      product_process: trial?.product_process || "",
+      duration: trial?.duration || "",
+      production_line: trial?.production_line || "",
+      team_members: trial?.team_members || "",
+      primary_goal: trial?.primary_goal || "",
+      success_criteria: trial?.success_criteria || "",
+      results_vs_objectives: trial?.results_vs_objectives || "",
+      key_learnings: trial?.key_learnings || "",
+      recommendations: trial?.recommendations || "",
+      recommendation_status: trial?.recommendation_status || "",
+      status: trial?.status || "draft",
+      materials: trial?.trial_materials?.map((m) => ({
+        material_name: m.material_name,
+        specification: m.specification,
+        supplier_lot: m.supplier_lot,
+        order_index: m.order_index,
+      })) || [],
+      parameters: trial?.trial_parameters?.map((p) => ({
+        parameter_name: p.parameter_name,
+        target_value: p.target_value,
+        actual_value: p.actual_value,
+        order_index: p.order_index,
+      })) || [],
+      costs: trial?.trial_costs?.map((c) => ({
+        category: c.category,
+        estimated_cost: c.estimated_cost,
+        actual_cost: c.actual_cost,
+        notes: c.notes,
+        order_index: c.order_index,
+      })) || [],
+    },
+  });
+
+  const {
+    fields: materialFields,
+    append: appendMaterial,
+    remove: removeMaterial,
+  } = useFieldArray({ control: form.control, name: "materials" });
+
+  const {
+    fields: parameterFields,
+    append: appendParameter,
+    remove: removeParameter,
+  } = useFieldArray({ control: form.control, name: "parameters" });
+
+  const {
+    fields: costFields,
+    append: appendCost,
+    remove: removeCost,
+  } = useFieldArray({ control: form.control, name: "costs" });
+
+  const watchedCosts = form.watch("costs");
+  const estimatedTotal = watchedCosts.reduce(
+    (sum, c) => sum + (Number(c.estimated_cost) || 0),
+    0
+  );
+  const actualTotal = watchedCosts.reduce(
+    (sum, c) => sum + (Number(c.actual_cost) || 0),
+    0
+  );
+
+  async function onSubmit(data: TrialFormValues, status?: string) {
+    setSaving(true);
+    const submitData = { ...data, status: status || data.status };
+
+    try {
+      const result = isEditing
+        ? await updateTrial(trial!.id, submitData)
+        : await createTrial(submitData);
+
+      if ("error" in result) {
+        toast({ title: "Error", description: result.error, variant: "destructive" });
+      } else {
+        toast({ title: isEditing ? "Trial updated" : "Trial created", description: `Trial ${data.trial_number} saved successfully.` });
+        router.push(`/trials/${result.id}`);
+        router.refresh();
+      }
+    } catch {
+      toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  }
+
+  return (
+    <form
+      onSubmit={form.handleSubmit((data) => onSubmit(data))}
+      className="space-y-6"
+    >
+      {/* Basic Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Basic Information</CardTitle>
+        </CardHeader>
+        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="trial_number">Trial Number</Label>
+            <Input
+              id="trial_number"
+              {...form.register("trial_number")}
+              readOnly
+              className="bg-muted"
+            />
+            {form.formState.errors.trial_number && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.trial_number.message}
+              </p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="date">Date</Label>
+            <Input id="date" type="date" {...form.register("date")} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="department">Department</Label>
+            <Input id="department" {...form.register("department")} placeholder="e.g., Production, R&D" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="lead_name">Trial Lead</Label>
+            <Input id="lead_name" {...form.register("lead_name")} placeholder="Lead name" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="product_process">Product/Process</Label>
+            <Input id="product_process" {...form.register("product_process")} placeholder="Product or process name" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="duration">Duration</Label>
+            <Input id="duration" {...form.register("duration")} placeholder="e.g., 4 hours, 2 days" />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="production_line">Production Line</Label>
+            <Input id="production_line" {...form.register("production_line")} placeholder="Line number/name" />
+          </div>
+
+          <div className="space-y-2 md:col-span-2">
+            <Label htmlFor="team_members">Team Members</Label>
+            <Input id="team_members" {...form.register("team_members")} placeholder="Comma-separated names" />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Objectives */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Objectives</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="primary_goal">Primary Goal</Label>
+            <Textarea id="primary_goal" {...form.register("primary_goal")} placeholder="What is the main objective of this trial?" rows={3} />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="success_criteria">Success Criteria</Label>
+            <Textarea id="success_criteria" {...form.register("success_criteria")} placeholder="How will success be measured?" rows={3} />
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Materials */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">Materials</CardTitle>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              appendMaterial({
+                material_name: "",
+                specification: "",
+                supplier_lot: "",
+                order_index: materialFields.length,
+              })
+            }
+          >
+            <Plus className="h-4 w-4 mr-1" /> Add Material
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {materialFields.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No materials added yet. Click &quot;Add Material&quot; to begin.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-sm font-medium text-muted-foreground">
+                <span>Material Name</span>
+                <span>Specification</span>
+                <span>Supplier/Lot</span>
+                <span></span>
+              </div>
+              {materialFields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2"
+                >
+                  <Input
+                    {...form.register(`materials.${index}.material_name`)}
+                    placeholder="Material name"
+                  />
+                  <Input
+                    {...form.register(`materials.${index}.specification`)}
+                    placeholder="Specification"
+                  />
+                  <Input
+                    {...form.register(`materials.${index}.supplier_lot`)}
+                    placeholder="Supplier/Lot #"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeMaterial(index)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Parameters */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">Parameters</CardTitle>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              appendParameter({
+                parameter_name: "",
+                target_value: "",
+                actual_value: "",
+                order_index: parameterFields.length,
+              })
+            }
+          >
+            <Plus className="h-4 w-4 mr-1" /> Add Parameter
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {parameterFields.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No parameters added yet. Click &quot;Add Parameter&quot; to begin.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2 text-sm font-medium text-muted-foreground">
+                <span>Parameter</span>
+                <span>Target Value</span>
+                <span>Actual Value</span>
+                <span></span>
+              </div>
+              {parameterFields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2"
+                >
+                  <Input
+                    {...form.register(`parameters.${index}.parameter_name`)}
+                    placeholder="Parameter name"
+                  />
+                  <Input
+                    {...form.register(`parameters.${index}.target_value`)}
+                    placeholder="Target"
+                  />
+                  <Input
+                    {...form.register(`parameters.${index}.actual_value`)}
+                    placeholder="Actual"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeParameter(index)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Costs */}
+      <Card>
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">Cost Tracking</CardTitle>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={() =>
+              appendCost({
+                category: "materials",
+                estimated_cost: null,
+                actual_cost: null,
+                notes: "",
+                order_index: costFields.length,
+              })
+            }
+          >
+            <Plus className="h-4 w-4 mr-1" /> Add Cost Item
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {costFields.length === 0 ? (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              No cost items added yet. Click &quot;Add Cost Item&quot; to begin.
+            </p>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid grid-cols-[150px_1fr_1fr_1fr_auto] gap-2 text-sm font-medium text-muted-foreground">
+                <span>Category</span>
+                <span>Estimated ($)</span>
+                <span>Actual ($)</span>
+                <span>Notes</span>
+                <span></span>
+              </div>
+              {costFields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="grid grid-cols-[150px_1fr_1fr_1fr_auto] gap-2"
+                >
+                  <Select
+                    value={form.watch(`costs.${index}.category`)}
+                    onValueChange={(value) =>
+                      form.setValue(
+                        `costs.${index}.category`,
+                        value as "materials" | "labor" | "downtime"
+                      )
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="materials">Materials</SelectItem>
+                      <SelectItem value="labor">Labor</SelectItem>
+                      <SelectItem value="downtime">Downtime</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...form.register(`costs.${index}.estimated_cost`, {
+                      valueAsNumber: true,
+                    })}
+                    placeholder="0.00"
+                  />
+                  <Input
+                    type="number"
+                    step="0.01"
+                    {...form.register(`costs.${index}.actual_cost`, {
+                      valueAsNumber: true,
+                    })}
+                    placeholder="0.00"
+                  />
+                  <Input
+                    {...form.register(`costs.${index}.notes`)}
+                    placeholder="Notes"
+                  />
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => removeCost(index)}
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+
+              <Separator />
+              <div className="grid grid-cols-[150px_1fr_1fr_1fr_auto] gap-2 font-semibold">
+                <span>Totals</span>
+                <span>{formatCurrency(estimatedTotal)}</span>
+                <span>{formatCurrency(actualTotal)}</span>
+                <span></span>
+                <span></span>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Results & Conclusions */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Results &amp; Conclusions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="results_vs_objectives">
+              Results vs. Objectives
+            </Label>
+            <Textarea
+              id="results_vs_objectives"
+              {...form.register("results_vs_objectives")}
+              placeholder="How did results compare to the stated objectives?"
+              rows={3}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="key_learnings">Key Learnings</Label>
+            <Textarea
+              id="key_learnings"
+              {...form.register("key_learnings")}
+              placeholder="What were the key takeaways from this trial?"
+              rows={3}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="recommendations">Recommendations</Label>
+            <Textarea
+              id="recommendations"
+              {...form.register("recommendations")}
+              placeholder="What are the recommended next steps?"
+              rows={3}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Recommendation Status</Label>
+            <Select
+              value={form.watch("recommendation_status")}
+              onValueChange={(value) =>
+                form.setValue("recommendation_status", value)
+              }
+            >
+              <SelectTrigger className="w-full md:w-[300px]">
+                <SelectValue placeholder="Select recommendation" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="proceed">Proceed</SelectItem>
+                <SelectItem value="additional_trials">
+                  Additional Trials Needed
+                </SelectItem>
+                <SelectItem value="discontinue">Discontinue</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Actions */}
+      <div className="flex flex-col sm:flex-row gap-3 justify-end no-print">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={() => router.back()}
+          disabled={saving}
+        >
+          Cancel
+        </Button>
+        <Button
+          type="button"
+          variant="secondary"
+          disabled={saving}
+          onClick={form.handleSubmit((data) => onSubmit(data, "draft"))}
+        >
+          {saving ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
+          Save as Draft
+        </Button>
+        <Button
+          type="button"
+          disabled={saving}
+          onClick={form.handleSubmit((data) => onSubmit(data, "completed"))}
+        >
+          {saving ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
+          Mark Complete
+        </Button>
+      </div>
+    </form>
+  );
+}
