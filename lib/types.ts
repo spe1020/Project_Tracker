@@ -84,6 +84,7 @@ export interface TrialSupplier {
 
 export interface TrialFormData {
   trial_number: string;
+  pig_name: string;
   date: string;
   department: string;
   lead_name: string;

@@ -41,6 +41,7 @@ export const supplierSchema = z.object({
 
 export const trialFormSchema = z.object({
   trial_number: z.string().min(1, "Trial number is required"),
+  pig_name: z.string().min(1, "Project name is required"),
   date: z.string(),
   department: z.string(),
   lead_name: z.string(),

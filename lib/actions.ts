@@ -125,15 +125,12 @@ export async function createTrial(
   const estimatedTotal = calculateTotal(formData.costs, "estimated_cost");
   const actualTotal = calculateTotal(formData.costs, "actual_cost");
 
-  // Generate pig name from trial number
-  const pigName = generatePigName(formData.trial_number);
-
   // Insert trial
   const { data: trialData, error: trialError } = await (supabase
     .from("trials") as any)
     .insert({
       trial_number: formData.trial_number,
-      pig_name: pigName,
+      pig_name: formData.pig_name,
       date: formData.date || null,
       department: formData.department || null,
       lead_name: formData.lead_name || null,

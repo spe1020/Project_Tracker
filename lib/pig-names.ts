@@ -38,12 +38,23 @@ function seededHash(str: string, seed: number): number {
 }
 
 /**
+ * Generate a random pig-themed codename (not seeded).
+ * Used for the default name on new trials before save.
+ */
+export function generateRandomPigName(): string {
+  const prefix = PREFIXES[Math.floor(Math.random() * PREFIXES.length)];
+  const adj = ADJECTIVES[Math.floor(Math.random() * ADJECTIVES.length)];
+  const useFamous = Math.random() < 0.2;
+  const pig = useFamous
+    ? FAMOUS_PIGS[Math.floor(Math.random() * FAMOUS_PIGS.length)]
+    : PIG_WORDS[Math.floor(Math.random() * PIG_WORDS.length)];
+  return `${prefix} ${adj} ${pig}`;
+}
+
+/**
  * Generate a deterministic pig-themed codename from a trial number.
- * Format: "Operation Golden Hamhock" or "Mission Mighty Wilbur"
- *
  * Uses the trial number string as a seed so the same trial always
- * gets the same name. Each word is picked using a different hash seed
- * to ensure variety between sequential trial numbers.
+ * gets the same name.
  */
 export function generatePigName(trialNumber: string): string {
   const h1 = seededHash(trialNumber, 7);

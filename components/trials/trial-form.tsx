@@ -4,7 +4,7 @@ import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
-import { Plus, Trash2, Save, Loader2, Paperclip, FileText, Image, Video, File, X } from "lucide-react";
+import { Plus, Trash2, Save, Loader2, Paperclip, FileText, Image, Video, File, X, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,6 +28,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { trialFormSchema, type TrialFormValues } from "@/lib/validations";
 import { createTrial, updateTrial } from "@/lib/actions";
 import { formatCurrency, formatFileSize, getFileTypeLabel } from "@/lib/utils";
+import { generateRandomPigName } from "@/lib/pig-names";
 import type { Trial } from "@/lib/types";
 
 function RequiredAsterisk() {
@@ -50,6 +51,7 @@ export function TrialForm({ trial, trialNumber, pigName }: TrialFormProps) {
     resolver: zodResolver(trialFormSchema),
     defaultValues: {
       trial_number: trial?.trial_number || trialNumber,
+      pig_name: trial?.pig_name || pigName || "",
       date: trial?.date || new Date().toISOString().split("T")[0],
       department: trial?.department || "",
       lead_name: trial?.lead_name || "",
@@ -199,8 +201,8 @@ export function TrialForm({ trial, trialNumber, pigName }: TrialFormProps) {
           <CardTitle className="text-lg">Basic Information</CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* Row 1: Trial Number, Date, Department */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {/* Row 1: Trial Number, Project Name */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="trial_number">Trial Number</Label>
               <Input
@@ -215,6 +217,39 @@ export function TrialForm({ trial, trialNumber, pigName }: TrialFormProps) {
                 </p>
               )}
             </div>
+            <div className="space-y-2">
+              <Label htmlFor="pig_name">Project Name</Label>
+              <div className="flex gap-2 items-center">
+                <span className="text-lg">🐷</span>
+                <Input
+                  id="pig_name"
+                  {...form.register("pig_name")}
+                  readOnly={isEditing}
+                  className={isEditing ? "bg-muted" : ""}
+                  placeholder="e.g., Operation Golden Hamhock"
+                />
+                {!isEditing && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    onClick={() => form.setValue("pig_name", generateRandomPigName())}
+                    title="Shuffle name"
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </Button>
+                )}
+              </div>
+              {form.formState.errors.pig_name && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.pig_name.message}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Row 2: Date, Department */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="date">Date<RequiredAsterisk /></Label>
               <Input id="date" type="date" {...form.register("date")} />
