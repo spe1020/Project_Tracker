@@ -284,6 +284,9 @@ export default function DashboardPage() {
                       <span className="font-medium">
                         {project.project_number}
                       </span>
+                      {project.pig_name && (
+                        <span className="text-sm text-muted-foreground">🐷 {project.pig_name}</span>
+                      )}
                       <Badge
                         className={getProjectStatusColor(project.status)}
                         variant="secondary"

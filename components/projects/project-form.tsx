@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { Save, Loader2, X } from "lucide-react";
+import { Save, Loader2, X, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,14 +29,16 @@ import {
   type ProjectFormValues,
 } from "@/lib/validations";
 import { createProject, updateProject } from "@/lib/project-actions";
+import { generateRandomPigName } from "@/lib/pig-names";
 import type { Project } from "@/lib/types";
 
 interface ProjectFormProps {
   project?: Project;
   projectNumber: string;
+  pigName?: string;
 }
 
-export function ProjectForm({ project, projectNumber }: ProjectFormProps) {
+export function ProjectForm({ project, projectNumber, pigName }: ProjectFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
@@ -46,6 +48,7 @@ export function ProjectForm({ project, projectNumber }: ProjectFormProps) {
     resolver: zodResolver(projectFormSchema),
     defaultValues: {
       project_number: project?.project_number || projectNumber,
+      pig_name: project?.pig_name || pigName || "",
       product_name: project?.product_name || "",
       project_description: project?.project_description || "",
       project_lead: project?.project_lead || "",
@@ -108,20 +111,48 @@ export function ProjectForm({ project, projectNumber }: ProjectFormProps) {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="product_name">
-                Product Name <span className="text-destructive">*</span>
+              <Label htmlFor="pig_name">
+                Project Name <span className="text-destructive">*</span>
               </Label>
-              <Input
-                id="product_name"
-                {...form.register("product_name")}
-                placeholder="e.g., Widget X-100"
-              />
-              {form.formState.errors.product_name && (
+              <div className="flex gap-2 items-center">
+                <span className="text-lg">🐷</span>
+                <Input
+                  id="pig_name"
+                  {...form.register("pig_name")}
+                  placeholder="e.g., Operation Golden Hamhock"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => form.setValue("pig_name", generateRandomPigName())}
+                  title="Shuffle name"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                </Button>
+              </div>
+              {form.formState.errors.pig_name && (
                 <p className="text-sm text-destructive">
-                  {form.formState.errors.product_name.message}
+                  {form.formState.errors.pig_name.message}
                 </p>
               )}
             </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="product_name">
+              Product Name <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="product_name"
+              {...form.register("product_name")}
+              placeholder="e.g., Widget X-100"
+            />
+            {form.formState.errors.product_name && (
+              <p className="text-sm text-destructive">
+                {form.formState.errors.product_name.message}
+              </p>
+            )}
           </div>
 
           <div className="space-y-2">

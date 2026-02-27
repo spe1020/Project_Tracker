@@ -58,10 +58,10 @@ function EditProjectContent() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Edit Project</h1>
         <p className="text-muted-foreground mt-1">
-          Editing: {project.project_number} — {project.product_name}
+          Editing: {project.project_number}{project.pig_name ? ` — 🐷 ${project.pig_name}` : ` — ${project.product_name}`}
         </p>
       </div>
-      <ProjectForm project={project} projectNumber={project.project_number} />
+      <ProjectForm project={project} projectNumber={project.project_number} pigName={project.pig_name || undefined} />
     </div>
   );
 }

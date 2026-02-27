@@ -71,6 +71,7 @@ export type TrialFormValues = z.infer<typeof trialFormSchema>;
 
 export const projectFormSchema = z.object({
   project_number: z.string().min(1, "Project number is required"),
+  pig_name: z.string().min(1, "Project name is required"),
   product_name: z.string().min(1, "Product name is required"),
   project_description: z.string(),
   project_lead: z.string(),

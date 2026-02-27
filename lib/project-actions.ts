@@ -8,6 +8,7 @@ import type {
   Trial,
 } from "@/lib/types";
 import { generateProjectNumber } from "@/lib/utils";
+import { generatePigName } from "@/lib/pig-names";
 
 // ─── Projects ────────────────────────────────────────────
 
@@ -108,8 +109,8 @@ export async function getProject(id: string): Promise<Project | null> {
   return project;
 }
 
-/** Generate the next project number */
-export async function getNextProjectNumber(): Promise<string> {
+/** Generate the next project number and pig name */
+export async function getNextProjectNumber(): Promise<{ projectNumber: string; pigName: string }> {
   const supabase = createBrowserClient();
   const year = new Date().getFullYear();
 
@@ -120,10 +121,12 @@ export async function getNextProjectNumber(): Promise<string> {
 
   if (error) {
     console.error("Error counting projects:", error);
-    return generateProjectNumber(0);
+    const projectNumber = generateProjectNumber(0);
+    return { projectNumber, pigName: generatePigName(projectNumber) };
   }
 
-  return generateProjectNumber(count || 0);
+  const projectNumber = generateProjectNumber(count || 0);
+  return { projectNumber, pigName: generatePigName(projectNumber) };
 }
 
 /** Create a new project */
@@ -135,6 +138,7 @@ export async function createProject(
   const { data, error } = await (supabase.from("projects") as any)
     .insert({
       project_number: formData.project_number,
+      pig_name: formData.pig_name || null,
       product_name: formData.product_name,
       project_description: formData.project_description || null,
       project_lead: formData.project_lead || null,
@@ -163,6 +167,7 @@ export async function updateProject(
 
   const { error } = await (supabase.from("projects") as any)
     .update({
+      pig_name: formData.pig_name || null,
       product_name: formData.product_name,
       project_description: formData.project_description || null,
       project_lead: formData.project_lead || null,

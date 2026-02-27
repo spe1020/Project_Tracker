@@ -126,6 +126,7 @@ export interface DashboardStats {
 export interface Project {
   id: string;
   project_number: string;
+  pig_name: string | null;
   product_name: string;
   project_description: string | null;
   project_lead: string | null;
@@ -182,6 +183,7 @@ export interface ProcessStep {
 
 export interface ProjectFormData {
   project_number: string;
+  pig_name: string;
   product_name: string;
   project_description: string;
   project_lead: string;

@@ -246,15 +246,15 @@ export function TrialForm({ trial, trialNumber, pigName, defaultProjectId, defau
             <div className="space-y-2">
               <Label>Process Step (optional)</Label>
               <Select
-                value={form.watch("process_step_id")}
-                onValueChange={(value) => form.setValue("process_step_id", value)}
+                value={form.watch("process_step_id") || "__none__"}
+                onValueChange={(value) => form.setValue("process_step_id", value === "__none__" ? "" : value)}
                 disabled={!selectedProjectId}
               >
                 <SelectTrigger>
                   <SelectValue placeholder={selectedProjectId ? "Select a step" : "Select a project first"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">None</SelectItem>
+                  <SelectItem value="__none__">None</SelectItem>
                   {steps.map((s) => (
                     <SelectItem key={s.id} value={s.id}>
                       Step {s.step_number}: {s.step_name}

@@ -36,7 +36,12 @@ export function ProjectCard({ project }: ProjectCardProps) {
               {formatProjectStatus(project.status)}
             </Badge>
           </div>
-          <p className="text-sm font-medium text-foreground">
+          {project.pig_name && (
+            <p className="text-sm font-medium text-foreground">
+              🐷 {project.pig_name}
+            </p>
+          )}
+          <p className="text-sm text-muted-foreground">
             {project.product_name}
           </p>
         </CardHeader>

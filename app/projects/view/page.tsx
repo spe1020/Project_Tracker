@@ -178,7 +178,12 @@ function ProjectViewContent() {
                 {formatProjectStatus(project.status)}
               </Badge>
             </div>
-            <p className="text-base font-medium mt-1">
+            {project.pig_name && (
+              <p className="text-base font-medium mt-1">
+                🐷 {project.pig_name}
+              </p>
+            )}
+            <p className="text-sm text-muted-foreground mt-0.5">
               {project.product_name}
             </p>
           </div>
