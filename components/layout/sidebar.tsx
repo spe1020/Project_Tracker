@@ -4,7 +4,6 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard,
-  FlaskConical,
   BarChart3,
   PlusCircle,
   FolderKanban,
@@ -15,8 +14,6 @@ const sidebarLinks = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
   { name: "All Projects", href: "/projects", icon: FolderKanban },
   { name: "New Project", href: "/projects/new", icon: PlusCircle },
-  { name: "All Trials", href: "/trials", icon: FlaskConical },
-  { name: "New Trial", href: "/trials/new", icon: PlusCircle },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
 ];
 

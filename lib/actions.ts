@@ -147,8 +147,8 @@ export async function createTrial(
       status: formData.status || "draft",
       estimated_total_cost: estimatedTotal,
       actual_total_cost: actualTotal,
-      project_id: (formData as any).project_id || null,
-      process_step_id: (formData as any).process_step_id || null,
+      project_id: formData.project_id,
+      process_step_id: formData.process_step_id || null,
     })
     .select("id, pig_name")
     .single();
@@ -271,8 +271,8 @@ export async function updateTrial(
     status: formData.status || "draft",
     estimated_total_cost: estimatedTotal,
     actual_total_cost: actualTotal,
-    project_id: (formData as any).project_id || null,
-    process_step_id: (formData as any).process_step_id || null,
+    project_id: formData.project_id,
+    process_step_id: formData.process_step_id || null,
   };
   const { error: trialError } = await (supabase
     .from("trials") as any)

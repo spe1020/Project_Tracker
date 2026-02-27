@@ -1,10 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { TrialForm } from "@/components/trials/trial-form";
 import { getNextTrialNumber } from "@/lib/actions";
 
-export default function NewTrialPage() {
+function NewTrialContent() {
+  const searchParams = useSearchParams();
+  const projectId = searchParams.get("project_id") || undefined;
+  const stepId = searchParams.get("step_id") || undefined;
+
   const [trialNumber, setTrialNumber] = useState<string | null>(null);
   const [pigName, setPigName] = useState<string | null>(null);
 
@@ -37,7 +42,26 @@ export default function NewTrialPage() {
         </p>
       </div>
 
-      <TrialForm trialNumber={trialNumber} pigName={pigName!} />
+      <TrialForm
+        trialNumber={trialNumber}
+        pigName={pigName!}
+        defaultProjectId={projectId}
+        defaultStepId={stepId}
+      />
     </div>
+  );
+}
+
+export default function NewTrialPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold tracking-tight">Loading...</h1>
+        </div>
+      }
+    >
+      <NewTrialContent />
+    </Suspense>
   );
 }

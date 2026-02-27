@@ -3,7 +3,7 @@
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { Plus, Trash2, Save, Loader2, Paperclip, FileText, Image, Video, File, X, RefreshCw } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -27,9 +27,10 @@ import { Separator } from "@/components/ui/separator";
 import { useToast } from "@/components/ui/use-toast";
 import { trialFormSchema, type TrialFormValues } from "@/lib/validations";
 import { createTrial, updateTrial } from "@/lib/actions";
+import { getAllProjects } from "@/lib/project-actions";
 import { formatCurrency, formatFileSize, getFileTypeLabel } from "@/lib/utils";
 import { generateRandomPigName } from "@/lib/pig-names";
-import type { Trial } from "@/lib/types";
+import type { Trial, Project, ProcessStep } from "@/lib/types";
 
 function RequiredAsterisk() {
   return <span className="text-destructive ml-0.5">*</span>;
@@ -39,13 +40,20 @@ interface TrialFormProps {
   trial?: Trial;
   trialNumber: string;
   pigName?: string;
+  defaultProjectId?: string;
+  defaultStepId?: string;
 }
 
-export function TrialForm({ trial, trialNumber, pigName }: TrialFormProps) {
+export function TrialForm({ trial, trialNumber, pigName, defaultProjectId, defaultStepId }: TrialFormProps) {
   const router = useRouter();
   const { toast } = useToast();
   const [saving, setSaving] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
   const isEditing = !!trial;
+
+  useEffect(() => {
+    getAllProjects().then(setProjects);
+  }, []);
 
   const form = useForm<TrialFormValues>({
     resolver: zodResolver(trialFormSchema),
@@ -66,6 +74,8 @@ export function TrialForm({ trial, trialNumber, pigName }: TrialFormProps) {
       recommendations: trial?.recommendations || "",
       recommendation_status: trial?.recommendation_status || "",
       status: trial?.status || "draft",
+      project_id: trial?.project_id || defaultProjectId || "",
+      process_step_id: trial?.process_step_id || defaultStepId || "",
       materials: trial?.trial_materials?.map((m) => ({
         material_name: m.material_name,
         specification: m.specification,
@@ -168,6 +178,11 @@ export function TrialForm({ trial, trialNumber, pigName }: TrialFormProps) {
     0
   );
 
+  // Get steps for selected project
+  const selectedProjectId = form.watch("project_id");
+  const selectedProject = projects.find((p) => p.id === selectedProjectId);
+  const steps = (selectedProject?.process_steps || []) as ProcessStep[];
+
   async function onSubmit(data: TrialFormValues, status?: string) {
     setSaving(true);
     const submitData = { ...data, status: status || data.status };
@@ -195,6 +210,63 @@ export function TrialForm({ trial, trialNumber, pigName }: TrialFormProps) {
       onSubmit={form.handleSubmit((data) => onSubmit(data))}
       className="space-y-8 pb-24"
     >
+      {/* Project Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Project Assignment</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Project<RequiredAsterisk /></Label>
+              <Select
+                value={form.watch("project_id")}
+                onValueChange={(value) => {
+                  form.setValue("project_id", value);
+                  form.setValue("process_step_id", "");
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a project" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.project_number} \u2014 {p.product_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {form.formState.errors.project_id && (
+                <p className="text-sm text-destructive">
+                  {form.formState.errors.project_id.message}
+                </p>
+              )}
+            </div>
+            <div className="space-y-2">
+              <Label>Process Step (optional)</Label>
+              <Select
+                value={form.watch("process_step_id")}
+                onValueChange={(value) => form.setValue("process_step_id", value)}
+                disabled={!selectedProjectId}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder={selectedProjectId ? "Select a step" : "Select a project first"} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">None</SelectItem>
+                  {steps.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      Step {s.step_number}: {s.step_name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Basic Information */}
       <Card>
         <CardHeader>

@@ -111,16 +111,18 @@ export function calculateTotal(
 
 // --- Project utilities ---
 
-/** Generate project number in format PROJ-YYYY-### */
+/** Generate project number in format PIG-YYYY-### */
 export function generateProjectNumber(existingCount: number): string {
   const year = new Date().getFullYear();
   const sequence = String(existingCount + 1).padStart(3, "0");
-  return `PROJ-${year}-${sequence}`;
+  return `PIG-${year}-${sequence}`;
 }
 
 /** Get project status badge color */
 export function getProjectStatusColor(status: string): string {
   switch (status) {
+    case "planning":
+      return "bg-purple-100 text-purple-800";
     case "active":
       return "bg-blue-100 text-blue-800";
     case "completed":
@@ -155,6 +157,8 @@ export function getStepStatusColor(status: string): string {
 /** Format project status for display */
 export function formatProjectStatus(status: string): string {
   switch (status) {
+    case "planning":
+      return "Planning";
     case "active":
       return "Active";
     case "completed":

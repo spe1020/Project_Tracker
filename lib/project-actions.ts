@@ -20,7 +20,7 @@ export async function getProjects(filters?: {
 
   let query = supabase
     .from("projects")
-    .select("*, process_steps(id, status)");
+    .select("*, process_steps(id, status), trials(id)");
 
   if (filters?.search) {
     query = query.or(
@@ -43,18 +43,21 @@ export async function getProjects(filters?: {
 
   return ((data as unknown as any[]) || []).map((p) => {
     const steps = p.process_steps || [];
+    const trials = p.trials || [];
     return {
       ...p,
       step_count: steps.length,
       completed_step_count: steps.filter(
         (s: any) => s.status === "completed"
       ).length,
+      trial_count: trials.length,
       process_steps: undefined,
+      trials: undefined,
     } as Project;
   });
 }
 
-/** Get a single project by ID, with steps and linked trials */
+/** Get a single project by ID, with steps and trials */
 export async function getProject(id: string): Promise<Project | null> {
   const supabase = createBrowserClient();
 
@@ -89,17 +92,18 @@ export async function getProject(id: string): Promise<Project | null> {
 
   const trials = (trialsData as unknown as Trial[]) || [];
 
-  // Attach linked trial to each step
+  // Attach linked trials to each step
   for (const step of steps) {
-    step.linked_trial =
-      trials.find((t) => t.process_step_id === step.id) || null;
+    step.linked_trials = trials.filter((t) => t.process_step_id === step.id);
   }
 
   project.process_steps = steps;
+  project.trials = trials;
   project.step_count = steps.length;
   project.completed_step_count = steps.filter(
     (s) => s.status === "completed"
   ).length;
+  project.trial_count = trials.length;
 
   return project;
 }
@@ -112,7 +116,7 @@ export async function getNextProjectNumber(): Promise<string> {
   const { count, error } = await supabase
     .from("projects")
     .select("*", { count: "exact", head: true })
-    .like("project_number", `PROJ-${year}-%`);
+    .like("project_number", `PIG-${year}-%`);
 
   if (error) {
     console.error("Error counting projects:", error);
@@ -135,7 +139,9 @@ export async function createProject(
       project_description: formData.project_description || null,
       project_lead: formData.project_lead || null,
       department: formData.department || null,
-      status: formData.status || "active",
+      status: formData.status || "planning",
+      start_date: formData.start_date || null,
+      target_completion_date: formData.target_completion_date || null,
     })
     .select("id")
     .single();
@@ -161,7 +167,9 @@ export async function updateProject(
       project_description: formData.project_description || null,
       project_lead: formData.project_lead || null,
       department: formData.department || null,
-      status: formData.status || "active",
+      status: formData.status || "planning",
+      start_date: formData.start_date || null,
+      target_completion_date: formData.target_completion_date || null,
     })
     .eq("id", id);
 
@@ -223,6 +231,8 @@ export async function createStep(
       step_type: formData.step_type || "material",
       facility_name: formData.facility_name || null,
       facility_location: formData.facility_location || null,
+      facility_type: formData.facility_type || null,
+      step_owner: formData.step_owner || null,
       scheduled_start_date: formData.scheduled_start_date || null,
       scheduled_end_date: formData.scheduled_end_date || null,
       actual_start_date: formData.actual_start_date || null,
@@ -230,6 +240,11 @@ export async function createStep(
       delay_reason: formData.delay_reason || null,
       material_input: formData.material_input || null,
       material_output: formData.material_output || null,
+      input_specification: formData.input_specification || null,
+      output_specification: formData.output_specification || null,
+      quantity: formData.quantity,
+      quantity_units: formData.quantity_units || null,
+      deliverable: formData.deliverable || null,
       service_provider: formData.service_provider || null,
       service_description: formData.service_description || null,
       estimated_cost: formData.estimated_cost,
@@ -262,6 +277,8 @@ export async function updateStep(
       step_type: formData.step_type || "material",
       facility_name: formData.facility_name || null,
       facility_location: formData.facility_location || null,
+      facility_type: formData.facility_type || null,
+      step_owner: formData.step_owner || null,
       scheduled_start_date: formData.scheduled_start_date || null,
       scheduled_end_date: formData.scheduled_end_date || null,
       actual_start_date: formData.actual_start_date || null,
@@ -269,6 +286,11 @@ export async function updateStep(
       delay_reason: formData.delay_reason || null,
       material_input: formData.material_input || null,
       material_output: formData.material_output || null,
+      input_specification: formData.input_specification || null,
+      output_specification: formData.output_specification || null,
+      quantity: formData.quantity,
+      quantity_units: formData.quantity_units || null,
+      deliverable: formData.deliverable || null,
       service_provider: formData.service_provider || null,
       service_description: formData.service_description || null,
       estimated_cost: formData.estimated_cost,
@@ -335,24 +357,30 @@ export async function linkTrialToStep(
 export async function getProjectDashboardStats(): Promise<ProjectDashboardStats> {
   const supabase = createBrowserClient();
 
-  const [totalRes, activeRes, completedRes, onHoldRes] = await Promise.all([
-    supabase.from("projects").select("*", { count: "exact", head: true }),
-    supabase
-      .from("projects")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "active"),
-    supabase
-      .from("projects")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "completed"),
-    supabase
-      .from("projects")
-      .select("*", { count: "exact", head: true })
-      .eq("status", "on_hold"),
-  ]);
+  const [totalRes, planningRes, activeRes, completedRes, onHoldRes] =
+    await Promise.all([
+      supabase.from("projects").select("*", { count: "exact", head: true }),
+      supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "planning"),
+      supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "active"),
+      supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "completed"),
+      supabase
+        .from("projects")
+        .select("*", { count: "exact", head: true })
+        .eq("status", "on_hold"),
+    ]);
 
   return {
     totalProjects: totalRes.count || 0,
+    planningProjects: planningRes.count || 0,
     activeProjects: activeRes.count || 0,
     completedProjects: completedRes.count || 0,
     onHoldProjects: onHoldRes.count || 0,
@@ -367,7 +395,7 @@ export async function getRecentProjects(
 
   const { data, error } = await supabase
     .from("projects")
-    .select("*, process_steps(id, status)")
+    .select("*, process_steps(id, status), trials(id)")
     .order("created_at", { ascending: false })
     .limit(limit);
 
@@ -378,31 +406,33 @@ export async function getRecentProjects(
 
   return ((data as unknown as any[]) || []).map((p) => {
     const steps = p.process_steps || [];
+    const trials = p.trials || [];
     return {
       ...p,
       step_count: steps.length,
       completed_step_count: steps.filter(
         (s: any) => s.status === "completed"
       ).length,
+      trial_count: trials.length,
       process_steps: undefined,
+      trials: undefined,
     } as Project;
   });
 }
 
-/** Get unlinked trials (trials not assigned to any project) */
-export async function getUnlinkedTrials(): Promise<Trial[]> {
+/** Get all projects (for trial form project selector) */
+export async function getAllProjects(): Promise<Project[]> {
   const supabase = createBrowserClient();
 
   const { data, error } = await supabase
-    .from("trials")
-    .select("*")
-    .is("project_id", null)
+    .from("projects")
+    .select("id, project_number, product_name, status, process_steps(id, step_number, step_name)")
     .order("created_at", { ascending: false });
 
   if (error) {
-    console.error("Error fetching unlinked trials:", error);
+    console.error("Error fetching all projects:", error);
     return [];
   }
 
-  return (data as unknown as Trial[]) || [];
+  return (data as unknown as Project[]) || [];
 }

@@ -50,7 +50,9 @@ export function ProjectForm({ project, projectNumber }: ProjectFormProps) {
       project_description: project?.project_description || "",
       project_lead: project?.project_lead || "",
       department: project?.department || "",
-      status: project?.status || "active",
+      status: project?.status || "planning",
+      start_date: project?.start_date || "",
+      target_completion_date: project?.target_completion_date || "",
     },
   });
 
@@ -151,22 +153,41 @@ export function ProjectForm({ project, projectNumber }: ProjectFormProps) {
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label>Status</Label>
-            <Select
-              value={form.watch("status")}
-              onValueChange={(value) => form.setValue("status", value)}
-            >
-              <SelectTrigger className="w-full md:w-[300px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="completed">Completed</SelectItem>
-                <SelectItem value="on_hold">On Hold</SelectItem>
-                <SelectItem value="cancelled">Cancelled</SelectItem>
-              </SelectContent>
-            </Select>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Status</Label>
+              <Select
+                value={form.watch("status")}
+                onValueChange={(value) => form.setValue("status", value)}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="planning">Planning</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="completed">Completed</SelectItem>
+                  <SelectItem value="on_hold">On Hold</SelectItem>
+                  <SelectItem value="cancelled">Cancelled</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="start_date">Start Date</Label>
+              <Input
+                id="start_date"
+                type="date"
+                {...form.register("start_date")}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="target_completion_date">Target Completion</Label>
+              <Input
+                id="target_completion_date"
+                type="date"
+                {...form.register("target_completion_date")}
+              />
+            </div>
           </div>
         </CardContent>
       </Card>

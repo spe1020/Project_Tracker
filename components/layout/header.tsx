@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { FlaskConical, Menu, X } from "lucide-react";
+import { Menu, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -10,7 +10,6 @@ import { useState } from "react";
 const navigation = [
   { name: "Dashboard", href: "/" },
   { name: "Projects", href: "/projects" },
-  { name: "Trials", href: "/trials" },
   { name: "Analytics", href: "/analytics" },
 ];
 
@@ -23,9 +22,9 @@ export function Header() {
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
           <Link href="/" className="flex items-center gap-2">
-            <FlaskConical className="h-8 w-8 text-primary" />
+            <span className="text-2xl">🐷</span>
             <span className="text-xl font-bold text-foreground">
-              Manufacturing Trials
+              New Pig
             </span>
           </Link>
         </div>
@@ -53,10 +52,7 @@ export function Header() {
             );
           })}
           <Link href="/projects/new" className="ml-2">
-            <Button size="sm" variant="outline">New Project</Button>
-          </Link>
-          <Link href="/trials/new">
-            <Button size="sm">New Trial</Button>
+            <Button size="sm">New Project</Button>
           </Link>
         </nav>
 
@@ -105,16 +101,8 @@ export function Header() {
                 href="/projects/new"
                 onClick={() => setMobileMenuOpen(false)}
               >
-                <Button size="sm" variant="outline" className="w-full">
-                  New Project
-                </Button>
-              </Link>
-              <Link
-                href="/trials/new"
-                onClick={() => setMobileMenuOpen(false)}
-              >
                 <Button size="sm" className="w-full">
-                  New Trial
+                  New Project
                 </Button>
               </Link>
             </div>

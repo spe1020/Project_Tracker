@@ -56,6 +56,8 @@ export const trialFormSchema = z.object({
   recommendations: z.string(),
   recommendation_status: z.string(),
   status: z.string(),
+  project_id: z.string().min(1, "Project is required"),
+  process_step_id: z.string(),
   materials: z.array(materialSchema),
   parameters: z.array(parameterSchema),
   costs: z.array(costSchema),
@@ -74,6 +76,8 @@ export const projectFormSchema = z.object({
   project_lead: z.string(),
   department: z.string(),
   status: z.string(),
+  start_date: z.string(),
+  target_completion_date: z.string(),
 });
 
 export type ProjectFormValues = z.infer<typeof projectFormSchema>;
@@ -85,6 +89,8 @@ export const stepFormSchema = z.object({
   step_type: z.enum(["material", "service"]),
   facility_name: z.string(),
   facility_location: z.string(),
+  facility_type: z.string(),
+  step_owner: z.string(),
   scheduled_start_date: z.string(),
   scheduled_end_date: z.string(),
   actual_start_date: z.string(),
@@ -92,6 +98,11 @@ export const stepFormSchema = z.object({
   delay_reason: z.string(),
   material_input: z.string(),
   material_output: z.string(),
+  input_specification: z.string(),
+  output_specification: z.string(),
+  quantity: z.coerce.number().nullable(),
+  quantity_units: z.string(),
+  deliverable: z.string(),
   service_provider: z.string(),
   service_description: z.string(),
   estimated_cost: z.coerce.number().nullable(),

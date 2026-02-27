@@ -3,15 +3,15 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
+  FolderKanban,
   FlaskConical,
   Clock,
   CheckCircle2,
-  DollarSign,
   PlusCircle,
   BarChart3,
   ArrowRight,
-  FolderKanban,
   Pause,
+  FileEdit,
 } from "lucide-react";
 import {
   Card,
@@ -21,11 +21,11 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { getDashboardStats, getRecentTrials } from "@/lib/actions";
 import {
   getProjectDashboardStats,
   getRecentProjects,
 } from "@/lib/project-actions";
+import { getDashboardStats, getRecentTrials } from "@/lib/actions";
 import {
   formatCurrency,
   formatDate,
@@ -42,36 +42,37 @@ import type {
 } from "@/lib/types";
 
 export default function DashboardPage() {
-  const [stats, setStats] = useState<DashboardStats>({
+  const [projectStats, setProjectStats] = useState<ProjectDashboardStats>({
+    totalProjects: 0,
+    planningProjects: 0,
+    activeProjects: 0,
+    completedProjects: 0,
+    onHoldProjects: 0,
+  });
+  const [trialStats, setTrialStats] = useState<DashboardStats>({
     totalTrials: 0,
     activeTrials: 0,
     completedTrials: 0,
     totalEstimatedCost: 0,
     totalActualCost: 0,
   });
-  const [projectStats, setProjectStats] = useState<ProjectDashboardStats>({
-    totalProjects: 0,
-    activeProjects: 0,
-    completedProjects: 0,
-    onHoldProjects: 0,
-  });
-  const [recentTrials, setRecentTrials] = useState<Trial[]>([]);
   const [recentProjects, setRecentProjects] = useState<Project[]>([]);
+  const [recentTrials, setRecentTrials] = useState<Trial[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     async function fetchData() {
-      const [statsData, trialsData, projStatsData, projData] =
+      const [projStatsData, projData, statsData, trialsData] =
         await Promise.all([
-          getDashboardStats(),
-          getRecentTrials(5),
           getProjectDashboardStats(),
           getRecentProjects(5),
+          getDashboardStats(),
+          getRecentTrials(5),
         ]);
-      setStats(statsData);
-      setRecentTrials(trialsData);
       setProjectStats(projStatsData);
       setRecentProjects(projData);
+      setTrialStats(statsData);
+      setRecentTrials(trialsData);
       setLoading(false);
     }
     fetchData();
@@ -81,7 +82,9 @@ export default function DashboardPage() {
     return (
       <div className="space-y-8">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            🐷 New Pig - Manufacturing Project Tracker
+          </h1>
           <p className="text-muted-foreground mt-1">Loading data...</p>
         </div>
       </div>
@@ -93,22 +96,18 @@ export default function DashboardPage() {
       {/* Page header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            🐷 New Pig
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Manufacturing project &amp; trial overview
+            Manufacturing Project Tracker
           </p>
         </div>
         <div className="flex gap-2">
           <Link href="/projects/new">
-            <Button variant="outline">
-              <PlusCircle className="h-4 w-4 mr-2" />
-              New Project
-            </Button>
-          </Link>
-          <Link href="/trials/new">
             <Button>
               <PlusCircle className="h-4 w-4 mr-2" />
-              New Trial
+              New Project
             </Button>
           </Link>
           <Link href="/analytics">
@@ -121,7 +120,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Project stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -139,7 +138,21 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Active Projects
+              Planning
+            </CardTitle>
+            <FileEdit className="h-4 w-4 text-purple-500" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">
+              {projectStats.planningProjects}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-sm font-medium text-muted-foreground">
+              Active
             </CardTitle>
             <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
@@ -153,7 +166,7 @@ export default function DashboardPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Completed Projects
+              Completed
             </CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
@@ -179,8 +192,8 @@ export default function DashboardPage() {
         </Card>
       </div>
 
-      {/* Trial stats */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Trial summary stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -189,7 +202,7 @@ export default function DashboardPage() {
             <FlaskConical className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.totalTrials}</div>
+            <div className="text-2xl font-bold">{trialStats.totalTrials}</div>
           </CardContent>
         </Card>
 
@@ -201,19 +214,19 @@ export default function DashboardPage() {
             <Clock className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.activeTrials}</div>
+            <div className="text-2xl font-bold">{trialStats.activeTrials}</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Completed
+              Completed Trials
             </CardTitle>
             <CheckCircle2 className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.completedTrials}</div>
+            <div className="text-2xl font-bold">{trialStats.completedTrials}</div>
           </CardContent>
         </Card>
 
@@ -222,14 +235,14 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium text-muted-foreground">
               Total Costs
             </CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
+            <FlaskConical className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {formatCurrency(stats.totalActualCost)}
+              {formatCurrency(trialStats.totalActualCost)}
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              Est: {formatCurrency(stats.totalEstimatedCost)}
+              Est: {formatCurrency(trialStats.totalEstimatedCost)}
             </p>
           </CardContent>
         </Card>
@@ -252,7 +265,7 @@ export default function DashboardPage() {
                 No projects yet. Create your first project to get started.
               </p>
               <Link href="/projects/new" className="mt-4 inline-block">
-                <Button variant="outline">
+                <Button>
                   <PlusCircle className="h-4 w-4 mr-2" />
                   Create First Project
                 </Button>
@@ -282,7 +295,13 @@ export default function DashboardPage() {
                       {project.product_name}
                     </p>
                   </div>
-                  <div className="text-sm text-muted-foreground ml-4 shrink-0">
+                  <div className="text-sm text-muted-foreground ml-4 shrink-0 flex items-center gap-3">
+                    {project.trial_count !== undefined && project.trial_count > 0 && (
+                      <span className="flex items-center gap-1">
+                        <FlaskConical className="h-3 w-3" />
+                        {project.trial_count}
+                      </span>
+                    )}
                     {project.step_count !== undefined
                       ? `${project.completed_step_count}/${project.step_count} steps`
                       : ""}
@@ -298,24 +317,13 @@ export default function DashboardPage() {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle>Recent Trials</CardTitle>
-          <Link href="/trials">
-            <Button variant="ghost" size="sm">
-              View All <ArrowRight className="ml-1 h-4 w-4" />
-            </Button>
-          </Link>
         </CardHeader>
         <CardContent>
           {recentTrials.length === 0 ? (
             <div className="text-center py-8">
               <p className="text-muted-foreground">
-                No trials yet. Create your first trial to get started.
+                No trials yet. Create a trial from a project page.
               </p>
-              <Link href="/trials/new" className="mt-4 inline-block">
-                <Button>
-                  <PlusCircle className="h-4 w-4 mr-2" />
-                  Create First Trial
-                </Button>
-              </Link>
             </div>
           ) : (
             <div className="space-y-3">

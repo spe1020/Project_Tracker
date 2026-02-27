@@ -10,6 +10,8 @@ import {
   DollarSign,
   Building2,
   FlaskConical,
+  User,
+  Package,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -23,6 +25,8 @@ import {
   formatCurrency,
   getStepStatusColor,
   formatStepStatus,
+  getStatusColor,
+  formatStatus,
 } from "@/lib/utils";
 import type { ProcessStep } from "@/lib/types";
 
@@ -51,6 +55,9 @@ export function StepCard({ step, onEdit, onDelete }: StepCardProps) {
         {/* Name & type */}
         <div className="flex-1 min-w-0">
           <span className="font-medium">{step.step_name}</span>
+          {step.step_owner && (
+            <span className="text-xs text-muted-foreground ml-2">({step.step_owner})</span>
+          )}
         </div>
 
         {/* Type badge */}
@@ -66,9 +73,17 @@ export function StepCard({ step, onEdit, onDelete }: StepCardProps) {
           {formatStepStatus(step.status)}
         </Badge>
 
+        {/* Trial count */}
+        {step.linked_trials && step.linked_trials.length > 0 && (
+          <span className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground shrink-0">
+            <FlaskConical className="h-3 w-3" />
+            {step.linked_trials.length}
+          </span>
+        )}
+
         {/* Date range (collapsed) */}
         {(step.scheduled_start_date || step.actual_start_date) && (
-          <span className="hidden sm:inline text-xs text-muted-foreground shrink-0">
+          <span className="hidden md:inline text-xs text-muted-foreground shrink-0">
             {formatDate(step.actual_start_date || step.scheduled_start_date)}
           </span>
         )}
@@ -93,16 +108,27 @@ export function StepCard({ step, onEdit, onDelete }: StepCardProps) {
       {open && (
         <CardContent className="pt-0 pb-4 px-4 space-y-4 border-t">
           {/* Facility */}
-          {(step.facility_name || step.facility_location) && (
+          {(step.facility_name || step.facility_location || step.facility_type) && (
             <div className="flex items-start gap-2 text-sm">
               <Building2 className="h-4 w-4 text-muted-foreground mt-0.5" />
               <div>
                 <p className="font-medium">Facility</p>
                 <p className="text-muted-foreground">
-                  {[step.facility_name, step.facility_location]
+                  {[step.facility_name, step.facility_type, step.facility_location]
                     .filter(Boolean)
-                    .join(" — ")}
+                    .join(" \u2014 ")}
                 </p>
+              </div>
+            </div>
+          )}
+
+          {/* Step Owner */}
+          {step.step_owner && (
+            <div className="flex items-start gap-2 text-sm">
+              <User className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="font-medium">Step Owner</p>
+                <p className="text-muted-foreground">{step.step_owner}</p>
               </div>
             </div>
           )}
@@ -113,8 +139,8 @@ export function StepCard({ step, onEdit, onDelete }: StepCardProps) {
             <div className="space-y-1">
               <p className="font-medium">Timeline</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-1 text-muted-foreground">
-                <span>Scheduled: {formatDate(step.scheduled_start_date)} — {formatDate(step.scheduled_end_date)}</span>
-                <span>Actual: {formatDate(step.actual_start_date)} — {formatDate(step.actual_end_date)}</span>
+                <span>Scheduled: {formatDate(step.scheduled_start_date)} \u2014 {formatDate(step.scheduled_end_date)}</span>
+                <span>Actual: {formatDate(step.actual_start_date)} \u2014 {formatDate(step.actual_end_date)}</span>
               </div>
               {step.delay_reason && (
                 <p className="text-yellow-700 text-xs">
@@ -126,7 +152,7 @@ export function StepCard({ step, onEdit, onDelete }: StepCardProps) {
 
           {/* Material flow OR Service details */}
           {step.step_type === "material" ? (
-            (step.material_input || step.material_output) && (
+            (step.material_input || step.material_output || step.input_specification || step.output_specification) && (
               <div className="text-sm space-y-1">
                 <p className="font-medium">Material Flow</p>
                 {step.material_input && (
@@ -134,9 +160,19 @@ export function StepCard({ step, onEdit, onDelete }: StepCardProps) {
                     Input: {step.material_input}
                   </p>
                 )}
+                {step.input_specification && (
+                  <p className="text-muted-foreground">
+                    Input Spec: {step.input_specification}
+                  </p>
+                )}
                 {step.material_output && (
                   <p className="text-muted-foreground">
                     Output: {step.material_output}
+                  </p>
+                )}
+                {step.output_specification && (
+                  <p className="text-muted-foreground">
+                    Output Spec: {step.output_specification}
                   </p>
                 )}
               </div>
@@ -157,6 +193,26 @@ export function StepCard({ step, onEdit, onDelete }: StepCardProps) {
                 )}
               </div>
             )
+          )}
+
+          {/* Quantity & Deliverable */}
+          {(step.quantity || step.deliverable) && (
+            <div className="flex items-start gap-2 text-sm">
+              <Package className="h-4 w-4 text-muted-foreground mt-0.5" />
+              <div>
+                <p className="font-medium">Output</p>
+                {step.quantity && (
+                  <p className="text-muted-foreground">
+                    Quantity: {step.quantity}{step.quantity_units ? ` ${step.quantity_units}` : ""}
+                  </p>
+                )}
+                {step.deliverable && (
+                  <p className="text-muted-foreground">
+                    Deliverable: {step.deliverable}
+                  </p>
+                )}
+              </div>
+            </div>
           )}
 
           {/* Costs */}
@@ -193,18 +249,26 @@ export function StepCard({ step, onEdit, onDelete }: StepCardProps) {
             </div>
           )}
 
-          {/* Linked trial */}
-          {step.linked_trial && (
-            <div className="flex items-center gap-2 text-sm">
-              <FlaskConical className="h-4 w-4 text-muted-foreground" />
-              <span>Linked Trial:</span>
-              <Link
-                href={`/trials/view?id=${step.linked_trial.id}`}
-                className="text-primary hover:underline font-medium"
-              >
-                {step.linked_trial.trial_number}
-                {step.linked_trial.pig_name && ` — ${step.linked_trial.pig_name}`}
-              </Link>
+          {/* Linked trials */}
+          {step.linked_trials && step.linked_trials.length > 0 && (
+            <div className="text-sm space-y-1">
+              <p className="font-medium flex items-center gap-1">
+                <FlaskConical className="h-4 w-4 text-muted-foreground" />
+                Linked Trials
+              </p>
+              {step.linked_trials.map((trial) => (
+                <Link
+                  key={trial.id}
+                  href={`/trials/view?id=${trial.id}`}
+                  className="flex items-center gap-2 text-primary hover:underline"
+                >
+                  <span className="font-medium">{trial.trial_number}</span>
+                  {trial.pig_name && <span className="text-muted-foreground">{trial.pig_name}</span>}
+                  <Badge className={cn(getStatusColor(trial.status), "text-xs")} variant="secondary">
+                    {formatStatus(trial.status)}
+                  </Badge>
+                </Link>
+              ))}
             </div>
           )}
 

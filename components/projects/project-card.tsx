@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { User, Building2 } from "lucide-react";
+import { User, Building2, FlaskConical, Calendar } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -12,6 +12,7 @@ import {
 import {
   getProjectStatusColor,
   formatProjectStatus,
+  formatDate,
 } from "@/lib/utils";
 import type { Project } from "@/lib/types";
 
@@ -53,27 +54,41 @@ export function ProjectCard({ project }: ProjectCardProps) {
                 <span>{project.department}</span>
               </div>
             )}
-            {project.step_count !== undefined && (
+            {project.start_date && (
               <div className="flex items-center gap-1.5">
-                <span className="font-medium text-foreground">
-                  {project.completed_step_count}/{project.step_count} steps
-                </span>
-                {project.step_count > 0 && (
-                  <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
-                    <div
-                      className="h-full bg-primary rounded-full transition-all"
-                      style={{
-                        width: `${
-                          (project.completed_step_count! /
-                            project.step_count) *
-                          100
-                        }%`,
-                      }}
-                    />
-                  </div>
-                )}
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{formatDate(project.start_date)}{project.target_completion_date ? ` \u2014 ${formatDate(project.target_completion_date)}` : ""}</span>
               </div>
             )}
+            <div className="flex items-center justify-between">
+              {project.step_count !== undefined && (
+                <div className="flex items-center gap-1.5">
+                  <span className="font-medium text-foreground">
+                    {project.completed_step_count}/{project.step_count} steps
+                  </span>
+                  {project.step_count > 0 && (
+                    <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden min-w-[40px]">
+                      <div
+                        className="h-full bg-primary rounded-full transition-all"
+                        style={{
+                          width: `${
+                            (project.completed_step_count! /
+                              project.step_count) *
+                            100
+                          }%`,
+                        }}
+                      />
+                    </div>
+                  )}
+                </div>
+              )}
+              {project.trial_count !== undefined && project.trial_count > 0 && (
+                <div className="flex items-center gap-1">
+                  <FlaskConical className="h-3.5 w-3.5" />
+                  <span>{project.trial_count} trial{project.trial_count !== 1 ? "s" : ""}</span>
+                </div>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>

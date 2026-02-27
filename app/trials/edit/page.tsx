@@ -40,7 +40,7 @@ function EditTrialContent() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Link href="/trials">
+          <Link href="/projects">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>

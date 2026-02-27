@@ -11,7 +11,7 @@ import {
   User,
   Building2,
   FlaskConical,
-  LinkIcon,
+  Calendar,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,20 +21,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogDescription,
-} from "@/components/ui/dialog";
 import { useToast } from "@/components/ui/use-toast";
 import { StepCard } from "@/components/steps/step-card";
 import { StepForm } from "@/components/steps/step-form";
@@ -43,13 +29,13 @@ import {
   deleteProject,
   deleteStep,
   getNextStepNumber,
-  linkTrialToStep,
-  getUnlinkedTrials,
 } from "@/lib/project-actions";
 import {
   formatDate,
   getProjectStatusColor,
   formatProjectStatus,
+  getStatusColor,
+  formatStatus,
 } from "@/lib/utils";
 import type { Project, ProcessStep, Trial } from "@/lib/types";
 
@@ -66,12 +52,6 @@ function ProjectViewContent() {
   const [stepFormOpen, setStepFormOpen] = useState(false);
   const [editingStep, setEditingStep] = useState<ProcessStep | undefined>();
   const [nextStepNum, setNextStepNum] = useState(1);
-
-  // Link trial dialog state
-  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
-  const [linkStepId, setLinkStepId] = useState<string | null>(null);
-  const [unlinkedTrials, setUnlinkedTrials] = useState<Trial[]>([]);
-  const [selectedTrialId, setSelectedTrialId] = useState<string>("");
 
   const loadProject = useCallback(async () => {
     if (!id) {
@@ -91,7 +71,7 @@ function ProjectViewContent() {
     if (!project) return;
     if (
       !confirm(
-        `Delete project ${project.project_number}? This will also delete all its process steps.`
+        `Delete project ${project.project_number}? This will also delete all its process steps and trials.`
       )
     )
       return;
@@ -138,34 +118,6 @@ function ProjectViewContent() {
     }
   }
 
-  async function handleOpenLinkDialog(stepId: string | null) {
-    setLinkStepId(stepId);
-    setSelectedTrialId("");
-    const trials = await getUnlinkedTrials();
-    setUnlinkedTrials(trials);
-    setLinkDialogOpen(true);
-  }
-
-  async function handleLinkTrial() {
-    if (!project || !selectedTrialId) return;
-    const result = await linkTrialToStep(
-      selectedTrialId,
-      project.id,
-      linkStepId
-    );
-    if ("error" in result) {
-      toast({
-        title: "Error",
-        description: result.error,
-        variant: "destructive",
-      });
-    } else {
-      toast({ title: "Trial linked" });
-      setLinkDialogOpen(false);
-      loadProject();
-    }
-  }
-
   if (loading) {
     return (
       <div className="space-y-6">
@@ -199,11 +151,10 @@ function ProjectViewContent() {
   }
 
   const steps = project.process_steps || [];
+  const trials = project.trials || [];
 
-  // Collect trials linked to this project (from steps' linked_trial)
-  const linkedTrials = steps
-    .map((s) => s.linked_trial)
-    .filter((t): t is Trial => !!t);
+  // Trials not assigned to any step
+  const ungroupedTrials = trials.filter((t) => !t.process_step_id);
 
   return (
     <div className="space-y-6">
@@ -233,6 +184,12 @@ function ProjectViewContent() {
           </div>
         </div>
         <div className="flex gap-2">
+          <Link href={`/trials/new?project_id=${project.id}`}>
+            <Button>
+              <FlaskConical className="h-4 w-4 mr-2" />
+              Create Trial
+            </Button>
+          </Link>
           <Link href={`/projects/edit?id=${project.id}`}>
             <Button variant="outline">
               <Pencil className="h-4 w-4 mr-2" />
@@ -256,7 +213,7 @@ function ProjectViewContent() {
           <CardTitle className="text-lg">Project Details</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             {project.project_lead && (
               <div className="flex items-center gap-2">
                 <User className="h-4 w-4 text-muted-foreground" />
@@ -281,7 +238,25 @@ function ProjectViewContent() {
                 {project.completed_step_count}/{project.step_count} completed
               </p>
             </div>
+            <div>
+              <p className="text-sm text-muted-foreground">Trials</p>
+              <p className="font-medium">{project.trial_count || 0} total</p>
+            </div>
           </div>
+
+          {/* Dates row */}
+          {(project.start_date || project.target_completion_date) && (
+            <div className="flex items-center gap-2 mt-4 text-sm">
+              <Calendar className="h-4 w-4 text-muted-foreground" />
+              <span className="text-muted-foreground">
+                {project.start_date ? `Start: ${formatDate(project.start_date)}` : ""}
+                {project.start_date && project.target_completion_date ? " | " : ""}
+                {project.target_completion_date ? `Target: ${formatDate(project.target_completion_date)}` : ""}
+                {project.actual_completion_date ? ` | Completed: ${formatDate(project.actual_completion_date)}` : ""}
+              </span>
+            </div>
+          )}
+
           {project.project_description && (
             <div className="mt-4">
               <p className="text-sm text-muted-foreground">Description</p>
@@ -326,31 +301,13 @@ function ProjectViewContent() {
         )}
       </div>
 
-      {/* Linked Trials */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-semibold">Linked Trials</h2>
-          <Button
-            variant="outline"
-            onClick={() => handleOpenLinkDialog(null)}
-          >
-            <LinkIcon className="h-4 w-4 mr-2" />
-            Link Trial
-          </Button>
-        </div>
-
-        {linkedTrials.length === 0 ? (
-          <Card>
-            <CardContent className="py-8 text-center">
-              <p className="text-muted-foreground">
-                No trials linked to this project yet.
-              </p>
-            </CardContent>
-          </Card>
-        ) : (
+      {/* Ungrouped Trials (not assigned to a step) */}
+      {ungroupedTrials.length > 0 && (
+        <div className="space-y-4">
+          <h2 className="text-xl font-semibold">Project Trials (No Step)</h2>
           <Card>
             <CardContent className="divide-y">
-              {linkedTrials.map((trial) => (
+              {ungroupedTrials.map((trial) => (
                 <Link
                   key={trial.id}
                   href={`/trials/view?id=${trial.id}`}
@@ -361,9 +318,12 @@ function ProjectViewContent() {
                     <span className="font-medium">{trial.trial_number}</span>
                     {trial.pig_name && (
                       <span className="text-sm text-muted-foreground">
-                        {trial.pig_name}
+                        🐷 {trial.pig_name}
                       </span>
                     )}
+                    <Badge className={getStatusColor(trial.status)} variant="secondary">
+                      {formatStatus(trial.status)}
+                    </Badge>
                   </div>
                   <span className="text-sm text-muted-foreground">
                     {formatDate(trial.date)}
@@ -372,8 +332,8 @@ function ProjectViewContent() {
               ))}
             </CardContent>
           </Card>
-        )}
-      </div>
+        </div>
+      )}
 
       {/* Metadata */}
       <p className="text-xs text-muted-foreground">
@@ -392,56 +352,6 @@ function ProjectViewContent() {
           nextStepNumber={nextStepNum}
         />
       )}
-
-      {/* Link trial dialog */}
-      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Link a Trial</DialogTitle>
-            <DialogDescription>
-              Select an unlinked trial to associate with this project.
-            </DialogDescription>
-          </DialogHeader>
-          {unlinkedTrials.length === 0 ? (
-            <p className="text-sm text-muted-foreground py-4">
-              No unlinked trials available.
-            </p>
-          ) : (
-            <div className="space-y-4">
-              <Select
-                value={selectedTrialId}
-                onValueChange={setSelectedTrialId}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a trial" />
-                </SelectTrigger>
-                <SelectContent>
-                  {unlinkedTrials.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.trial_number}
-                      {t.pig_name ? ` — ${t.pig_name}` : ""}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <div className="flex justify-end gap-2">
-                <Button
-                  variant="outline"
-                  onClick={() => setLinkDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleLinkTrial}
-                  disabled={!selectedTrialId}
-                >
-                  Link Trial
-                </Button>
-              </div>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
     </div>
   );
 }

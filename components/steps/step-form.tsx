@@ -58,6 +58,8 @@ export function StepForm({
       step_type: step?.step_type || "material",
       facility_name: step?.facility_name || "",
       facility_location: step?.facility_location || "",
+      facility_type: step?.facility_type || "",
+      step_owner: step?.step_owner || "",
       scheduled_start_date: step?.scheduled_start_date || "",
       scheduled_end_date: step?.scheduled_end_date || "",
       actual_start_date: step?.actual_start_date || "",
@@ -65,6 +67,11 @@ export function StepForm({
       delay_reason: step?.delay_reason || "",
       material_input: step?.material_input || "",
       material_output: step?.material_output || "",
+      input_specification: step?.input_specification || "",
+      output_specification: step?.output_specification || "",
+      quantity: step?.quantity ?? null,
+      quantity_units: step?.quantity_units || "",
+      deliverable: step?.deliverable || "",
       service_provider: step?.service_provider || "",
       service_description: step?.service_description || "",
       estimated_cost: step?.estimated_cost ?? null,
@@ -151,8 +158,8 @@ export function StepForm({
             </div>
           </div>
 
-          {/* Type & Status */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Type, Status, Owner */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Type</Label>
               <Select
@@ -188,15 +195,29 @@ export function StepForm({
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-2">
+              <Label>Step Owner</Label>
+              <Input
+                {...form.register("step_owner")}
+                placeholder="Responsible person"
+              />
+            </div>
           </div>
 
           {/* Facility */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="space-y-2">
               <Label>Facility Name</Label>
               <Input
                 {...form.register("facility_name")}
                 placeholder="e.g., Plant A"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Facility Type</Label>
+              <Input
+                {...form.register("facility_type")}
+                placeholder="e.g., Manufacturing"
               />
             </div>
             <div className="space-y-2">
@@ -250,22 +271,40 @@ export function StepForm({
 
           {/* Conditional: Material or Service */}
           {stepType === "material" ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Material Input</Label>
-                <Input
-                  {...form.register("material_input")}
-                  placeholder="e.g., Resin pellets"
-                />
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Material Input</Label>
+                  <Input
+                    {...form.register("material_input")}
+                    placeholder="e.g., Resin pellets"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Material Output</Label>
+                  <Input
+                    {...form.register("material_output")}
+                    placeholder="e.g., Extruded film"
+                  />
+                </div>
               </div>
-              <div className="space-y-2">
-                <Label>Material Output</Label>
-                <Input
-                  {...form.register("material_output")}
-                  placeholder="e.g., Extruded film"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Input Specification</Label>
+                  <Input
+                    {...form.register("input_specification")}
+                    placeholder="e.g., Grade A, 50 micron"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Output Specification</Label>
+                  <Input
+                    {...form.register("output_specification")}
+                    placeholder="e.g., 100mm width, 0.5mm thick"
+                  />
+                </div>
               </div>
-            </div>
+            </>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -284,6 +323,33 @@ export function StepForm({
               </div>
             </div>
           )}
+
+          {/* Quantity & Deliverable */}
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="space-y-2">
+              <Label>Quantity</Label>
+              <Input
+                type="number"
+                step="0.01"
+                {...form.register("quantity", { valueAsNumber: true })}
+                placeholder="0"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Quantity Units</Label>
+              <Input
+                {...form.register("quantity_units")}
+                placeholder="e.g., kg, pcs, rolls"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Deliverable</Label>
+              <Input
+                {...form.register("deliverable")}
+                placeholder="e.g., Finished product batch"
+              />
+            </div>
+          </div>
 
           {/* Costs */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

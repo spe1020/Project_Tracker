@@ -78,7 +78,7 @@ function TrialViewContent() {
     return (
       <div className="space-y-6">
         <div className="flex items-center gap-3">
-          <Link href="/trials">
+          <Link href="/projects">
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -94,12 +94,17 @@ function TrialViewContent() {
     );
   }
 
+  // Back link goes to project if available, otherwise to projects list
+  const backHref = trial.project
+    ? `/projects/view?id=${trial.project.id}`
+    : "/projects";
+
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 no-print">
         <div className="flex items-center gap-3">
-          <Link href="/trials">
+          <Link href={backHref}>
             <Button variant="ghost" size="icon">
               <ArrowLeft className="h-4 w-4" />
             </Button>
@@ -142,14 +147,14 @@ function TrialViewContent() {
         </div>
       </div>
 
-      {/* Project breadcrumb */}
+      {/* Project breadcrumb — always shown */}
       {trial.project && (
         <div className="flex items-center gap-1.5 text-sm text-muted-foreground no-print">
           <Link
             href={`/projects/view?id=${trial.project.id}`}
             className="hover:text-primary hover:underline"
           >
-            Project {trial.project.project_number}
+            {trial.project.project_number}
           </Link>
           {trial.process_step && (
             <>

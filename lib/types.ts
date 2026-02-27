@@ -18,7 +18,7 @@ export interface Trial {
   status: "draft" | "in_progress" | "completed";
   estimated_total_cost: number | null;
   actual_total_cost: number | null;
-  project_id: string | null;
+  project_id: string;
   process_step_id: string | null;
   created_at: string;
   updated_at: string;
@@ -104,6 +104,8 @@ export interface TrialFormData {
   recommendations: string;
   recommendation_status: string;
   status: string;
+  project_id: string;
+  process_step_id: string;
   materials: TrialMaterial[];
   parameters: TrialParameter[];
   costs: TrialCost[];
@@ -128,14 +130,19 @@ export interface Project {
   project_description: string | null;
   project_lead: string | null;
   department: string | null;
-  status: "active" | "completed" | "on_hold" | "cancelled";
+  status: "planning" | "active" | "completed" | "on_hold" | "cancelled";
+  start_date: string | null;
+  target_completion_date: string | null;
+  actual_completion_date: string | null;
   created_at: string;
   updated_at: string;
   // Relations
   process_steps?: ProcessStep[];
+  trials?: Trial[];
   // Computed (from joins)
   step_count?: number;
   completed_step_count?: number;
+  trial_count?: number;
 }
 
 export interface ProcessStep {
@@ -146,6 +153,8 @@ export interface ProcessStep {
   step_type: "material" | "service";
   facility_name: string | null;
   facility_location: string | null;
+  facility_type: string | null;
+  step_owner: string | null;
   scheduled_start_date: string | null;
   scheduled_end_date: string | null;
   actual_start_date: string | null;
@@ -153,6 +162,11 @@ export interface ProcessStep {
   delay_reason: string | null;
   material_input: string | null;
   material_output: string | null;
+  input_specification: string | null;
+  output_specification: string | null;
+  quantity: number | null;
+  quantity_units: string | null;
+  deliverable: string | null;
   service_provider: string | null;
   service_description: string | null;
   estimated_cost: number | null;
@@ -163,7 +177,7 @@ export interface ProcessStep {
   created_at: string;
   updated_at: string;
   // Joined
-  linked_trial?: Trial | null;
+  linked_trials?: Trial[];
 }
 
 export interface ProjectFormData {
@@ -173,6 +187,8 @@ export interface ProjectFormData {
   project_lead: string;
   department: string;
   status: string;
+  start_date: string;
+  target_completion_date: string;
 }
 
 export interface StepFormData {
@@ -182,6 +198,8 @@ export interface StepFormData {
   step_type: string;
   facility_name: string;
   facility_location: string;
+  facility_type: string;
+  step_owner: string;
   scheduled_start_date: string;
   scheduled_end_date: string;
   actual_start_date: string;
@@ -189,6 +207,11 @@ export interface StepFormData {
   delay_reason: string;
   material_input: string;
   material_output: string;
+  input_specification: string;
+  output_specification: string;
+  quantity: number | null;
+  quantity_units: string;
+  deliverable: string;
   service_provider: string;
   service_description: string;
   estimated_cost: number | null;
@@ -203,4 +226,5 @@ export interface ProjectDashboardStats {
   activeProjects: number;
   completedProjects: number;
   onHoldProjects: number;
+  planningProjects: number;
 }
