@@ -108,3 +108,80 @@ export function calculateTotal(
 ): number {
   return costs.reduce((sum, cost) => sum + (cost[field] || 0), 0);
 }
+
+// --- Project utilities ---
+
+/** Generate project number in format PROJ-YYYY-### */
+export function generateProjectNumber(existingCount: number): string {
+  const year = new Date().getFullYear();
+  const sequence = String(existingCount + 1).padStart(3, "0");
+  return `PROJ-${year}-${sequence}`;
+}
+
+/** Get project status badge color */
+export function getProjectStatusColor(status: string): string {
+  switch (status) {
+    case "active":
+      return "bg-blue-100 text-blue-800";
+    case "completed":
+      return "bg-green-100 text-green-800";
+    case "on_hold":
+      return "bg-yellow-100 text-yellow-800";
+    case "cancelled":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+}
+
+/** Get step status badge color */
+export function getStepStatusColor(status: string): string {
+  switch (status) {
+    case "not_started":
+      return "bg-gray-100 text-gray-800";
+    case "in_progress":
+      return "bg-blue-100 text-blue-800";
+    case "completed":
+      return "bg-green-100 text-green-800";
+    case "delayed":
+      return "bg-yellow-100 text-yellow-800";
+    case "blocked":
+      return "bg-red-100 text-red-800";
+    default:
+      return "bg-gray-100 text-gray-800";
+  }
+}
+
+/** Format project status for display */
+export function formatProjectStatus(status: string): string {
+  switch (status) {
+    case "active":
+      return "Active";
+    case "completed":
+      return "Completed";
+    case "on_hold":
+      return "On Hold";
+    case "cancelled":
+      return "Cancelled";
+    default:
+      return status;
+  }
+}
+
+/** Format step status for display */
+export function formatStepStatus(status: string): string {
+  switch (status) {
+    case "not_started":
+      return "Not Started";
+    case "in_progress":
+      return "In Progress";
+    case "completed":
+      return "Completed";
+    case "delayed":
+      return "Delayed";
+    case "blocked":
+      return "Blocked";
+    default:
+      return status;
+  }
+}

@@ -45,7 +45,7 @@ import {
   getStatusColor,
   getRecommendationLabel,
 } from "@/lib/utils";
-import type { Trial } from "@/lib/types";
+import type { Trial, Project, ProcessStep } from "@/lib/types";
 
 function TrialViewContent() {
   const searchParams = useSearchParams();
@@ -141,6 +141,31 @@ function TrialViewContent() {
           </Link>
         </div>
       </div>
+
+      {/* Project breadcrumb */}
+      {trial.project && (
+        <div className="flex items-center gap-1.5 text-sm text-muted-foreground no-print">
+          <Link
+            href={`/projects/view?id=${trial.project.id}`}
+            className="hover:text-primary hover:underline"
+          >
+            Project {trial.project.project_number}
+          </Link>
+          {trial.process_step && (
+            <>
+              <span>&rsaquo;</span>
+              <span>
+                Step {trial.process_step.step_number}:{" "}
+                {trial.process_step.step_name}
+              </span>
+            </>
+          )}
+          <span>&rsaquo;</span>
+          <span className="text-foreground font-medium">
+            {trial.trial_number}
+          </span>
+        </div>
+      )}
 
       {/* Print header */}
       <div className="hidden print:block">

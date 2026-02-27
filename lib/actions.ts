@@ -65,7 +65,7 @@ export async function getTrial(id: string): Promise<Trial | null> {
 
   const { data, error } = await supabase
     .from("trials")
-    .select("*, trial_materials(*), trial_parameters(*), trial_costs(*), trial_attachments(*), trial_suppliers(*)")
+    .select("*, trial_materials(*), trial_parameters(*), trial_costs(*), trial_attachments(*), trial_suppliers(*), project:projects(*), process_step:process_steps(*)")
     .eq("id", id)
     .single();
 
@@ -147,6 +147,8 @@ export async function createTrial(
       status: formData.status || "draft",
       estimated_total_cost: estimatedTotal,
       actual_total_cost: actualTotal,
+      project_id: (formData as any).project_id || null,
+      process_step_id: (formData as any).process_step_id || null,
     })
     .select("id, pig_name")
     .single();
@@ -269,6 +271,8 @@ export async function updateTrial(
     status: formData.status || "draft",
     estimated_total_cost: estimatedTotal,
     actual_total_cost: actualTotal,
+    project_id: (formData as any).project_id || null,
+    process_step_id: (formData as any).process_step_id || null,
   };
   const { error: trialError } = await (supabase
     .from("trials") as any)

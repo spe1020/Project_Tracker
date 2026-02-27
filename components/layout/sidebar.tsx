@@ -7,11 +7,14 @@ import {
   FlaskConical,
   BarChart3,
   PlusCircle,
+  FolderKanban,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const sidebarLinks = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
+  { name: "All Projects", href: "/projects", icon: FolderKanban },
+  { name: "New Project", href: "/projects/new", icon: PlusCircle },
   { name: "All Trials", href: "/trials", icon: FlaskConical },
   { name: "New Trial", href: "/trials/new", icon: PlusCircle },
   { name: "Analytics", href: "/analytics", icon: BarChart3 },
@@ -25,13 +28,17 @@ export function Sidebar() {
       <nav className="flex flex-col gap-1 p-4">
         {sidebarLinks.map((item) => {
           const Icon = item.icon;
+          const isActive =
+            item.href === "/"
+              ? pathname === "/"
+              : pathname === item.href;
           return (
             <Link
               key={item.name}
               href={item.href}
               className={cn(
                 "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
-                pathname === item.href
+                isActive
                   ? "bg-primary/10 text-primary"
                   : "text-muted-foreground hover:text-foreground hover:bg-muted"
               )}

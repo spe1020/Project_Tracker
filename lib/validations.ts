@@ -64,3 +64,41 @@ export const trialFormSchema = z.object({
 });
 
 export type TrialFormValues = z.infer<typeof trialFormSchema>;
+
+// --- Project & Step schemas ---
+
+export const projectFormSchema = z.object({
+  project_number: z.string().min(1, "Project number is required"),
+  product_name: z.string().min(1, "Product name is required"),
+  project_description: z.string(),
+  project_lead: z.string(),
+  department: z.string(),
+  status: z.string(),
+});
+
+export type ProjectFormValues = z.infer<typeof projectFormSchema>;
+
+export const stepFormSchema = z.object({
+  project_id: z.string().min(1),
+  step_number: z.coerce.number().min(1),
+  step_name: z.string().min(1, "Step name is required"),
+  step_type: z.enum(["material", "service"]),
+  facility_name: z.string(),
+  facility_location: z.string(),
+  scheduled_start_date: z.string(),
+  scheduled_end_date: z.string(),
+  actual_start_date: z.string(),
+  actual_end_date: z.string(),
+  delay_reason: z.string(),
+  material_input: z.string(),
+  material_output: z.string(),
+  service_provider: z.string(),
+  service_description: z.string(),
+  estimated_cost: z.coerce.number().nullable(),
+  actual_cost: z.coerce.number().nullable(),
+  lessons_learned: z.string(),
+  notes: z.string(),
+  status: z.string(),
+});
+
+export type StepFormValues = z.infer<typeof stepFormSchema>;
