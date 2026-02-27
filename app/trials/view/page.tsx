@@ -1,5 +1,8 @@
+"use client";
+
+import { Suspense, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { notFound } from "next/navigation";
 import {
   Calendar,
   User,
@@ -34,16 +37,53 @@ import {
   getStatusColor,
   getRecommendationLabel,
 } from "@/lib/utils";
+import type { Trial } from "@/lib/types";
 
-interface TrialViewPageProps {
-  params: { id: string };
-}
+function TrialViewContent() {
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+  const [trial, setTrial] = useState<Trial | null>(null);
+  const [loading, setLoading] = useState(true);
 
-export default async function TrialViewPage({ params }: TrialViewPageProps) {
-  const trial = await getTrial(params.id);
+  useEffect(() => {
+    if (!id) {
+      setLoading(false);
+      return;
+    }
+    getTrial(id).then((data) => {
+      setTrial(data);
+      setLoading(false);
+    });
+  }, [id]);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Loading trial...</h1>
+        </div>
+      </div>
+    );
+  }
 
   if (!trial) {
-    notFound();
+    return (
+      <div className="space-y-6">
+        <div className="flex items-center gap-3">
+          <Link href="/trials">
+            <Button variant="ghost" size="icon">
+              <ArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Trial not found</h1>
+            <p className="text-muted-foreground mt-1">
+              The requested trial could not be found.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -76,13 +116,11 @@ export default async function TrialViewPage({ params }: TrialViewPageProps) {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.print()} asChild>
-            <button>
-              <Printer className="h-4 w-4 mr-2" />
-              Print
-            </button>
+          <Button variant="outline" onClick={() => window.print()}>
+            <Printer className="h-4 w-4 mr-2" />
+            Print
           </Button>
-          <Link href={`/trials/${trial.id}/edit`}>
+          <Link href={`/trials/edit?id=${trial.id}`}>
             <Button>
               <Pencil className="h-4 w-4 mr-2" />
               Edit
@@ -115,30 +153,30 @@ export default async function TrialViewPage({ params }: TrialViewPageProps) {
               <Factory className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Department</p>
-                <p className="font-medium">{trial.department || "—"}</p>
+                <p className="font-medium">{trial.department || "\u2014"}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <User className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Trial Lead</p>
-                <p className="font-medium">{trial.lead_name || "—"}</p>
+                <p className="font-medium">{trial.lead_name || "\u2014"}</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
               <Clock className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm text-muted-foreground">Duration</p>
-                <p className="font-medium">{trial.duration || "—"}</p>
+                <p className="font-medium">{trial.duration || "\u2014"}</p>
               </div>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Production Line</p>
-              <p className="font-medium">{trial.production_line || "—"}</p>
+              <p className="font-medium">{trial.production_line || "\u2014"}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Team Members</p>
-              <p className="font-medium">{trial.team_members || "—"}</p>
+              <p className="font-medium">{trial.team_members || "\u2014"}</p>
             </div>
           </div>
         </CardContent>
@@ -155,7 +193,7 @@ export default async function TrialViewPage({ params }: TrialViewPageProps) {
               Primary Goal
             </p>
             <p className="whitespace-pre-wrap">
-              {trial.primary_goal || "—"}
+              {trial.primary_goal || "\u2014"}
             </p>
           </div>
           <Separator />
@@ -164,7 +202,7 @@ export default async function TrialViewPage({ params }: TrialViewPageProps) {
               Success Criteria
             </p>
             <p className="whitespace-pre-wrap">
-              {trial.success_criteria || "—"}
+              {trial.success_criteria || "\u2014"}
             </p>
           </div>
         </CardContent>
@@ -290,7 +328,7 @@ export default async function TrialViewPage({ params }: TrialViewPageProps) {
               Results vs. Objectives
             </p>
             <p className="whitespace-pre-wrap">
-              {trial.results_vs_objectives || "—"}
+              {trial.results_vs_objectives || "\u2014"}
             </p>
           </div>
           <Separator />
@@ -299,7 +337,7 @@ export default async function TrialViewPage({ params }: TrialViewPageProps) {
               Key Learnings
             </p>
             <p className="whitespace-pre-wrap">
-              {trial.key_learnings || "—"}
+              {trial.key_learnings || "\u2014"}
             </p>
           </div>
           <Separator />
@@ -308,7 +346,7 @@ export default async function TrialViewPage({ params }: TrialViewPageProps) {
               Recommendations
             </p>
             <p className="whitespace-pre-wrap">
-              {trial.recommendations || "—"}
+              {trial.recommendations || "\u2014"}
             </p>
           </div>
           <Separator />
@@ -329,5 +367,19 @@ export default async function TrialViewPage({ params }: TrialViewPageProps) {
         {formatDate(trial.updated_at)}
       </p>
     </div>
+  );
+}
+
+export default function TrialViewPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-6">
+          <h1 className="text-3xl font-bold tracking-tight">Loading...</h1>
+        </div>
+      }
+    >
+      <TrialViewContent />
+    </Suspense>
   );
 }

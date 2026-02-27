@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";
+"use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   FlaskConical,
@@ -25,12 +26,42 @@ import {
   formatStatus,
   getStatusColor,
 } from "@/lib/utils";
+import type { Trial, DashboardStats } from "@/lib/types";
 
-export default async function DashboardPage() {
-  const [stats, recentTrials] = await Promise.all([
-    getDashboardStats(),
-    getRecentTrials(5),
-  ]);
+export default function DashboardPage() {
+  const [stats, setStats] = useState<DashboardStats>({
+    totalTrials: 0,
+    activeTrials: 0,
+    completedTrials: 0,
+    totalEstimatedCost: 0,
+    totalActualCost: 0,
+  });
+  const [recentTrials, setRecentTrials] = useState<Trial[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      const [statsData, trialsData] = await Promise.all([
+        getDashboardStats(),
+        getRecentTrials(5),
+      ]);
+      setStats(statsData);
+      setRecentTrials(trialsData);
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-muted-foreground mt-1">Loading data...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-8">
@@ -142,7 +173,7 @@ export default async function DashboardPage() {
               {recentTrials.map((trial) => (
                 <Link
                   key={trial.id}
-                  href={`/trials/${trial.id}`}
+                  href={`/trials/view?id=${trial.id}`}
                   className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex-1 min-w-0">

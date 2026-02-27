@@ -198,7 +198,7 @@ export function TrialList({ trials }: TrialListProps) {
                 <TableRow key={trial.id}>
                   <TableCell>
                     <Link
-                      href={`/trials/${trial.id}`}
+                      href={`/trials/view?id=${trial.id}`}
                       className="font-medium text-primary hover:underline"
                     >
                       {trial.trial_number}

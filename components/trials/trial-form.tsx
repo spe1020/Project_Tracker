@@ -122,8 +122,7 @@ export function TrialForm({ trial, trialNumber }: TrialFormProps) {
         toast({ title: "Error", description: result.error, variant: "destructive" });
       } else {
         toast({ title: isEditing ? "Trial updated" : "Trial created", description: `Trial ${data.trial_number} saved successfully.` });
-        router.push(`/trials/${result.id}`);
-        router.refresh();
+        router.push(`/trials/view?id=${result.id}`);
       }
     } catch {
       toast({ title: "Error", description: "An unexpected error occurred.", variant: "destructive" });

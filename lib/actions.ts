@@ -1,6 +1,4 @@
-"use server";
-
-import { createServerClient } from "@/lib/supabase/server";
+import { createBrowserClient } from "@/lib/supabase/client";
 import type {
   Trial,
   TrialMaterial,
@@ -20,7 +18,7 @@ export async function getTrials(filters?: {
   sortBy?: string;
   sortOrder?: "asc" | "desc";
 }): Promise<Trial[]> {
-  const supabase = await createServerClient();
+  const supabase = createBrowserClient();
 
   let query = supabase
     .from("trials")
@@ -60,7 +58,7 @@ export async function getTrials(filters?: {
 
 /** Get a single trial by ID */
 export async function getTrial(id: string): Promise<Trial | null> {
-  const supabase = await createServerClient();
+  const supabase = createBrowserClient();
 
   const { data, error } = await supabase
     .from("trials")
@@ -95,7 +93,7 @@ export async function getTrial(id: string): Promise<Trial | null> {
 
 /** Generate the next trial number */
 export async function getNextTrialNumber(): Promise<string> {
-  const supabase = await createServerClient();
+  const supabase = createBrowserClient();
   const year = new Date().getFullYear();
 
   const { count, error } = await supabase
@@ -115,7 +113,7 @@ export async function getNextTrialNumber(): Promise<string> {
 export async function createTrial(
   formData: TrialFormData
 ): Promise<{ id: string } | { error: string }> {
-  const supabase = await createServerClient();
+  const supabase = createBrowserClient();
 
   const estimatedTotal = calculateTotal(formData.costs, "estimated_cost");
   const actualTotal = calculateTotal(formData.costs, "actual_cost");
@@ -206,7 +204,7 @@ export async function updateTrial(
   id: string,
   formData: TrialFormData
 ): Promise<{ id: string } | { error: string }> {
-  const supabase = await createServerClient();
+  const supabase = createBrowserClient();
 
   const estimatedTotal = calculateTotal(formData.costs, "estimated_cost");
   const actualTotal = calculateTotal(formData.costs, "actual_cost");
@@ -301,7 +299,7 @@ export async function updateTrial(
 export async function deleteTrial(
   id: string
 ): Promise<{ success: boolean } | { error: string }> {
-  const supabase = await createServerClient();
+  const supabase = createBrowserClient();
 
   const { error } = await supabase.from("trials").delete().eq("id", id);
 
@@ -315,7 +313,7 @@ export async function deleteTrial(
 
 /** Get dashboard stats */
 export async function getDashboardStats(): Promise<DashboardStats> {
-  const supabase = await createServerClient();
+  const supabase = createBrowserClient();
 
   const [totalRes, activeRes, completedRes, costsRes] = await Promise.all([
     supabase.from("trials").select("*", { count: "exact", head: true }),
@@ -352,7 +350,7 @@ export async function getDashboardStats(): Promise<DashboardStats> {
 
 /** Get recent trials for dashboard */
 export async function getRecentTrials(limit: number = 5): Promise<Trial[]> {
-  const supabase = await createServerClient();
+  const supabase = createBrowserClient();
 
   const { data, error } = await supabase
     .from("trials")

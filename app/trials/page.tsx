@@ -1,13 +1,25 @@
-export const dynamic = "force-dynamic";
+"use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PlusCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { TrialList } from "@/components/trials/trial-list";
 import { getTrials } from "@/lib/actions";
+import type { Trial } from "@/lib/types";
 
-export default async function TrialsPage() {
-  const trials = await getTrials();
+export default function TrialsPage() {
+  const [trials, setTrials] = useState<Trial[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchData() {
+      const data = await getTrials();
+      setTrials(data);
+      setLoading(false);
+    }
+    fetchData();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -26,7 +38,11 @@ export default async function TrialsPage() {
         </Link>
       </div>
 
-      <TrialList trials={trials} />
+      {loading ? (
+        <p className="text-muted-foreground">Loading trials...</p>
+      ) : (
+        <TrialList trials={trials} />
+      )}
     </div>
   );
 }
