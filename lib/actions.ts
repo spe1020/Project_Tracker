@@ -56,7 +56,7 @@ export async function getTrials(filters?: {
     return [];
   }
 
-  return data as Trial[];
+  return (data as unknown as Trial[]) || [];
 }
 
 /** Get a single trial by ID */
@@ -74,34 +74,26 @@ export async function getTrial(id: string): Promise<Trial | null> {
     return null;
   }
 
+  const trial = data as unknown as Trial;
+
   // Sort related items by order_index
-  if (data.trial_materials) {
-    data.trial_materials.sort(
-      (a: TrialMaterial, b: TrialMaterial) => a.order_index - b.order_index
-    );
+  if (trial.trial_materials) {
+    trial.trial_materials.sort((a, b) => a.order_index - b.order_index);
   }
-  if (data.trial_parameters) {
-    data.trial_parameters.sort(
-      (a: TrialParameter, b: TrialParameter) => a.order_index - b.order_index
-    );
+  if (trial.trial_parameters) {
+    trial.trial_parameters.sort((a, b) => a.order_index - b.order_index);
   }
-  if (data.trial_costs) {
-    data.trial_costs.sort(
-      (a: TrialCost, b: TrialCost) => a.order_index - b.order_index
-    );
+  if (trial.trial_costs) {
+    trial.trial_costs.sort((a, b) => a.order_index - b.order_index);
   }
-  if (data.trial_attachments) {
-    data.trial_attachments.sort(
-      (a: TrialAttachment, b: TrialAttachment) => a.order_index - b.order_index
-    );
+  if (trial.trial_attachments) {
+    trial.trial_attachments.sort((a, b) => a.order_index - b.order_index);
   }
-  if (data.trial_suppliers) {
-    data.trial_suppliers.sort(
-      (a: TrialSupplier, b: TrialSupplier) => a.order_index - b.order_index
-    );
+  if (trial.trial_suppliers) {
+    trial.trial_suppliers.sort((a, b) => a.order_index - b.order_index);
   }
 
-  return data as Trial;
+  return trial;
 }
 
 /** Generate the next trial number and pig name */
@@ -137,8 +129,8 @@ export async function createTrial(
   const pigName = generatePigName(formData.trial_number);
 
   // Insert trial
-  const { data: trial, error: trialError } = await supabase
-    .from("trials")
+  const { data: trialData, error: trialError } = await (supabase
+    .from("trials") as any)
     .insert({
       trial_number: formData.trial_number,
       pig_name: pigName,
@@ -167,12 +159,14 @@ export async function createTrial(
     return { error: trialError.message };
   }
 
+  const trial = trialData as unknown as { id: string; pig_name: string };
+
   // Insert related data in parallel
   const insertOps = [];
 
   if (formData.materials.length > 0) {
     insertOps.push(
-      supabase.from("trial_materials").insert(
+      (supabase.from("trial_materials") as any).insert(
         formData.materials.map((m, i) => ({
           trial_id: trial.id,
           material_name: m.material_name,
@@ -180,13 +174,13 @@ export async function createTrial(
           supplier_lot: m.supplier_lot,
           order_index: i,
         }))
-      ).select()
+      )
     );
   }
 
   if (formData.parameters.length > 0) {
     insertOps.push(
-      supabase.from("trial_parameters").insert(
+      (supabase.from("trial_parameters") as any).insert(
         formData.parameters.map((p, i) => ({
           trial_id: trial.id,
           parameter_name: p.parameter_name,
@@ -194,13 +188,13 @@ export async function createTrial(
           actual_value: p.actual_value,
           order_index: i,
         }))
-      ).select()
+      )
     );
   }
 
   if (formData.costs.length > 0) {
     insertOps.push(
-      supabase.from("trial_costs").insert(
+      (supabase.from("trial_costs") as any).insert(
         formData.costs.map((c, i) => ({
           trial_id: trial.id,
           category: c.category,
@@ -209,13 +203,13 @@ export async function createTrial(
           notes: c.notes,
           order_index: i,
         }))
-      ).select()
+      )
     );
   }
 
   if (formData.attachments.length > 0) {
     insertOps.push(
-      supabase.from("trial_attachments").insert(
+      (supabase.from("trial_attachments") as any).insert(
         formData.attachments.map((a, i) => ({
           trial_id: trial.id,
           file_name: a.file_name,
@@ -225,13 +219,13 @@ export async function createTrial(
           storage_path: a.storage_path,
           order_index: i,
         }))
-      ).select()
+      )
     );
   }
 
   if (formData.suppliers.length > 0) {
     insertOps.push(
-      supabase.from("trial_suppliers").insert(
+      (supabase.from("trial_suppliers") as any).insert(
         formData.suppliers.map((s, i) => ({
           trial_id: trial.id,
           supplier_name: s.supplier_name,
@@ -240,7 +234,7 @@ export async function createTrial(
           site_location: s.site_location,
           order_index: i,
         }))
-      ).select()
+      )
     );
   }
 
@@ -260,27 +254,28 @@ export async function updateTrial(
   const actualTotal = calculateTotal(formData.costs, "actual_cost");
 
   // Update trial
-  const { error: trialError } = await supabase
-    .from("trials")
-    .update({
-      trial_number: formData.trial_number,
-      date: formData.date || null,
-      department: formData.department || null,
-      lead_name: formData.lead_name || null,
-      product_process: formData.product_process || null,
-      duration: formData.duration || null,
-      production_line: formData.production_line || null,
-      team_members: formData.team_members || null,
-      primary_goal: formData.primary_goal || null,
-      success_criteria: formData.success_criteria || null,
-      results_vs_objectives: formData.results_vs_objectives || null,
-      key_learnings: formData.key_learnings || null,
-      recommendations: formData.recommendations || null,
-      recommendation_status: formData.recommendation_status || null,
-      status: formData.status || "draft",
-      estimated_total_cost: estimatedTotal,
-      actual_total_cost: actualTotal,
-    })
+  const updatePayload = {
+    trial_number: formData.trial_number,
+    date: formData.date || null,
+    department: formData.department || null,
+    lead_name: formData.lead_name || null,
+    product_process: formData.product_process || null,
+    duration: formData.duration || null,
+    production_line: formData.production_line || null,
+    team_members: formData.team_members || null,
+    primary_goal: formData.primary_goal || null,
+    success_criteria: formData.success_criteria || null,
+    results_vs_objectives: formData.results_vs_objectives || null,
+    key_learnings: formData.key_learnings || null,
+    recommendations: formData.recommendations || null,
+    recommendation_status: formData.recommendation_status || null,
+    status: formData.status || "draft",
+    estimated_total_cost: estimatedTotal,
+    actual_total_cost: actualTotal,
+  };
+  const { error: trialError } = await (supabase
+    .from("trials") as any)
+    .update(updatePayload)
     .eq("id", id);
 
   if (trialError) {
@@ -301,7 +296,7 @@ export async function updateTrial(
 
   if (formData.materials.length > 0) {
     reinsertOps.push(
-      supabase.from("trial_materials").insert(
+      (supabase.from("trial_materials") as any).insert(
         formData.materials.map((m, i) => ({
           trial_id: id,
           material_name: m.material_name,
@@ -309,13 +304,13 @@ export async function updateTrial(
           supplier_lot: m.supplier_lot,
           order_index: i,
         }))
-      ).select()
+      )
     );
   }
 
   if (formData.parameters.length > 0) {
     reinsertOps.push(
-      supabase.from("trial_parameters").insert(
+      (supabase.from("trial_parameters") as any).insert(
         formData.parameters.map((p, i) => ({
           trial_id: id,
           parameter_name: p.parameter_name,
@@ -323,13 +318,13 @@ export async function updateTrial(
           actual_value: p.actual_value,
           order_index: i,
         }))
-      ).select()
+      )
     );
   }
 
   if (formData.costs.length > 0) {
     reinsertOps.push(
-      supabase.from("trial_costs").insert(
+      (supabase.from("trial_costs") as any).insert(
         formData.costs.map((c, i) => ({
           trial_id: id,
           category: c.category,
@@ -338,13 +333,13 @@ export async function updateTrial(
           notes: c.notes,
           order_index: i,
         }))
-      ).select()
+      )
     );
   }
 
   if (formData.attachments.length > 0) {
     reinsertOps.push(
-      supabase.from("trial_attachments").insert(
+      (supabase.from("trial_attachments") as any).insert(
         formData.attachments.map((a, i) => ({
           trial_id: id,
           file_name: a.file_name,
@@ -354,13 +349,13 @@ export async function updateTrial(
           storage_path: a.storage_path,
           order_index: i,
         }))
-      ).select()
+      )
     );
   }
 
   if (formData.suppliers.length > 0) {
     reinsertOps.push(
-      supabase.from("trial_suppliers").insert(
+      (supabase.from("trial_suppliers") as any).insert(
         formData.suppliers.map((s, i) => ({
           trial_id: id,
           supplier_name: s.supplier_name,
@@ -369,7 +364,7 @@ export async function updateTrial(
           site_location: s.site_location,
           order_index: i,
         }))
-      ).select()
+      )
     );
   }
 
@@ -411,13 +406,14 @@ export async function getDashboardStats(): Promise<DashboardStats> {
     supabase.from("trials").select("estimated_total_cost, actual_total_cost"),
   ]);
 
+  const costData = costsRes.data as unknown as { estimated_total_cost: number | null; actual_total_cost: number | null }[] | null;
   const totalEstimated =
-    costsRes.data?.reduce(
+    costData?.reduce(
       (sum, t) => sum + (Number(t.estimated_total_cost) || 0),
       0
     ) || 0;
   const totalActual =
-    costsRes.data?.reduce(
+    costData?.reduce(
       (sum, t) => sum + (Number(t.actual_total_cost) || 0),
       0
     ) || 0;
@@ -446,5 +442,5 @@ export async function getRecentTrials(limit: number = 5): Promise<Trial[]> {
     return [];
   }
 
-  return data as Trial[];
+  return (data as unknown as Trial[]) || [];
 }
