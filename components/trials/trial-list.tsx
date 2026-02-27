@@ -50,6 +50,7 @@ export function TrialList({ trials }: TrialListProps) {
       result = result.filter(
         (t) =>
           t.trial_number.toLowerCase().includes(query) ||
+          (t.pig_name && t.pig_name.toLowerCase().includes(query)) ||
           (t.department && t.department.toLowerCase().includes(query)) ||
           (t.lead_name && t.lead_name.toLowerCase().includes(query)) ||
           (t.product_process && t.product_process.toLowerCase().includes(query))
@@ -158,6 +159,7 @@ export function TrialList({ trials }: TrialListProps) {
                     Trial # <ArrowUpDown className="ml-1 h-3 w-3" />
                   </Button>
                 </TableHead>
+                <TableHead className="hidden lg:table-cell">Codename</TableHead>
                 <TableHead>
                   <Button
                     variant="ghost"
@@ -203,6 +205,9 @@ export function TrialList({ trials }: TrialListProps) {
                     >
                       {trial.trial_number}
                     </Link>
+                  </TableCell>
+                  <TableCell className="hidden lg:table-cell text-muted-foreground">
+                    {trial.pig_name ? `🐷 ${trial.pig_name}` : "—"}
                   </TableCell>
                   <TableCell>{formatDate(trial.date)}</TableCell>
                   <TableCell>{trial.department || "—"}</TableCell>

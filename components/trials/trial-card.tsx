@@ -35,6 +35,11 @@ export function TrialCard({ trial }: TrialCardProps) {
               {formatStatus(trial.status)}
             </Badge>
           </div>
+          {trial.pig_name && (
+            <p className="text-sm font-medium">
+              🐷 {trial.pig_name}
+            </p>
+          )}
           {trial.product_process && (
             <p className="text-sm text-muted-foreground">
               {trial.product_process}

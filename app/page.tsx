@@ -179,6 +179,9 @@ export default function DashboardPage() {
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <span className="font-medium">{trial.trial_number}</span>
+                      {trial.pig_name && (
+                        <span className="text-sm text-muted-foreground">🐷 {trial.pig_name}</span>
+                      )}
                       <Badge
                         className={getStatusColor(trial.status)}
                         variant="secondary"

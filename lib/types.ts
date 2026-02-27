@@ -1,6 +1,7 @@
 export interface Trial {
   id: string;
   trial_number: string;
+  pig_name: string | null;
   date: string | null;
   department: string | null;
   lead_name: string | null;
@@ -23,6 +24,8 @@ export interface Trial {
   trial_materials?: TrialMaterial[];
   trial_parameters?: TrialParameter[];
   trial_costs?: TrialCost[];
+  trial_attachments?: TrialAttachment[];
+  trial_suppliers?: TrialSupplier[];
 }
 
 export interface TrialMaterial {
@@ -56,6 +59,29 @@ export interface TrialCost {
   created_at?: string;
 }
 
+export interface TrialAttachment {
+  id?: string;
+  trial_id?: string;
+  file_name: string;
+  file_type: string;
+  file_size: number | null;
+  description: string;
+  storage_path: string | null;
+  order_index: number;
+  created_at?: string;
+}
+
+export interface TrialSupplier {
+  id?: string;
+  trial_id?: string;
+  supplier_name: string;
+  contact_name: string;
+  role: string;
+  site_location: string;
+  order_index: number;
+  created_at?: string;
+}
+
 export interface TrialFormData {
   trial_number: string;
   date: string;
@@ -75,6 +101,8 @@ export interface TrialFormData {
   materials: TrialMaterial[];
   parameters: TrialParameter[];
   costs: TrialCost[];
+  attachments: TrialAttachment[];
+  suppliers: TrialSupplier[];
 }
 
 export interface DashboardStats {

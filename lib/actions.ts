@@ -4,10 +4,13 @@ import type {
   TrialMaterial,
   TrialParameter,
   TrialCost,
+  TrialAttachment,
+  TrialSupplier,
   TrialFormData,
   DashboardStats,
 } from "@/lib/types";
 import { generateTrialNumber, calculateTotal } from "@/lib/utils";
+import { generatePigName } from "@/lib/pig-names";
 
 /** Get all trials with optional filtering */
 export async function getTrials(filters?: {
@@ -22,11 +25,11 @@ export async function getTrials(filters?: {
 
   let query = supabase
     .from("trials")
-    .select("*, trial_materials(*), trial_parameters(*), trial_costs(*)");
+    .select("*, trial_materials(*), trial_parameters(*), trial_costs(*), trial_attachments(*), trial_suppliers(*)");
 
   if (filters?.search) {
     query = query.or(
-      `trial_number.ilike.%${filters.search}%,department.ilike.%${filters.search}%,lead_name.ilike.%${filters.search}%`
+      `trial_number.ilike.%${filters.search}%,pig_name.ilike.%${filters.search}%,department.ilike.%${filters.search}%,lead_name.ilike.%${filters.search}%`
     );
   }
 
@@ -62,7 +65,7 @@ export async function getTrial(id: string): Promise<Trial | null> {
 
   const { data, error } = await supabase
     .from("trials")
-    .select("*, trial_materials(*), trial_parameters(*), trial_costs(*)")
+    .select("*, trial_materials(*), trial_parameters(*), trial_costs(*), trial_attachments(*), trial_suppliers(*)")
     .eq("id", id)
     .single();
 
@@ -87,12 +90,22 @@ export async function getTrial(id: string): Promise<Trial | null> {
       (a: TrialCost, b: TrialCost) => a.order_index - b.order_index
     );
   }
+  if (data.trial_attachments) {
+    data.trial_attachments.sort(
+      (a: TrialAttachment, b: TrialAttachment) => a.order_index - b.order_index
+    );
+  }
+  if (data.trial_suppliers) {
+    data.trial_suppliers.sort(
+      (a: TrialSupplier, b: TrialSupplier) => a.order_index - b.order_index
+    );
+  }
 
   return data as Trial;
 }
 
-/** Generate the next trial number */
-export async function getNextTrialNumber(): Promise<string> {
+/** Generate the next trial number and pig name */
+export async function getNextTrialNumber(): Promise<{ trialNumber: string; pigName: string }> {
   const supabase = createBrowserClient();
   const year = new Date().getFullYear();
 
@@ -103,10 +116,12 @@ export async function getNextTrialNumber(): Promise<string> {
 
   if (error) {
     console.error("Error counting trials:", error);
-    return generateTrialNumber(0);
+    const trialNumber = generateTrialNumber(0);
+    return { trialNumber, pigName: generatePigName(trialNumber) };
   }
 
-  return generateTrialNumber(count || 0);
+  const trialNumber = generateTrialNumber(count || 0);
+  return { trialNumber, pigName: generatePigName(trialNumber) };
 }
 
 /** Create a new trial */
@@ -118,11 +133,15 @@ export async function createTrial(
   const estimatedTotal = calculateTotal(formData.costs, "estimated_cost");
   const actualTotal = calculateTotal(formData.costs, "actual_cost");
 
+  // Generate pig name from trial number
+  const pigName = generatePigName(formData.trial_number);
+
   // Insert trial
   const { data: trial, error: trialError } = await supabase
     .from("trials")
     .insert({
       trial_number: formData.trial_number,
+      pig_name: pigName,
       date: formData.date || null,
       department: formData.department || null,
       lead_name: formData.lead_name || null,
@@ -140,7 +159,7 @@ export async function createTrial(
       estimated_total_cost: estimatedTotal,
       actual_total_cost: actualTotal,
     })
-    .select("id")
+    .select("id, pig_name")
     .single();
 
   if (trialError) {
@@ -188,6 +207,37 @@ export async function createTrial(
           estimated_cost: c.estimated_cost,
           actual_cost: c.actual_cost,
           notes: c.notes,
+          order_index: i,
+        }))
+      ).select()
+    );
+  }
+
+  if (formData.attachments.length > 0) {
+    insertOps.push(
+      supabase.from("trial_attachments").insert(
+        formData.attachments.map((a, i) => ({
+          trial_id: trial.id,
+          file_name: a.file_name,
+          file_type: a.file_type,
+          file_size: a.file_size,
+          description: a.description,
+          storage_path: a.storage_path,
+          order_index: i,
+        }))
+      ).select()
+    );
+  }
+
+  if (formData.suppliers.length > 0) {
+    insertOps.push(
+      supabase.from("trial_suppliers").insert(
+        formData.suppliers.map((s, i) => ({
+          trial_id: trial.id,
+          supplier_name: s.supplier_name,
+          contact_name: s.contact_name,
+          role: s.role,
+          site_location: s.site_location,
           order_index: i,
         }))
       ).select()
@@ -243,6 +293,8 @@ export async function updateTrial(
     supabase.from("trial_materials").delete().eq("trial_id", id),
     supabase.from("trial_parameters").delete().eq("trial_id", id),
     supabase.from("trial_costs").delete().eq("trial_id", id),
+    supabase.from("trial_attachments").delete().eq("trial_id", id),
+    supabase.from("trial_suppliers").delete().eq("trial_id", id),
   ]);
 
   const reinsertOps = [];
@@ -284,6 +336,37 @@ export async function updateTrial(
           estimated_cost: c.estimated_cost,
           actual_cost: c.actual_cost,
           notes: c.notes,
+          order_index: i,
+        }))
+      ).select()
+    );
+  }
+
+  if (formData.attachments.length > 0) {
+    reinsertOps.push(
+      supabase.from("trial_attachments").insert(
+        formData.attachments.map((a, i) => ({
+          trial_id: id,
+          file_name: a.file_name,
+          file_type: a.file_type,
+          file_size: a.file_size,
+          description: a.description,
+          storage_path: a.storage_path,
+          order_index: i,
+        }))
+      ).select()
+    );
+  }
+
+  if (formData.suppliers.length > 0) {
+    reinsertOps.push(
+      supabase.from("trial_suppliers").insert(
+        formData.suppliers.map((s, i) => ({
+          trial_id: id,
+          supplier_name: s.supplier_name,
+          contact_name: s.contact_name,
+          role: s.role,
+          site_location: s.site_location,
           order_index: i,
         }))
       ).select()

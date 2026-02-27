@@ -22,6 +22,23 @@ export const costSchema = z.object({
   order_index: z.number(),
 });
 
+export const attachmentSchema = z.object({
+  file_name: z.string().min(1, "File name is required"),
+  file_type: z.string(),
+  file_size: z.number().nullable(),
+  description: z.string(),
+  storage_path: z.string().nullable(),
+  order_index: z.number(),
+});
+
+export const supplierSchema = z.object({
+  supplier_name: z.string(),
+  contact_name: z.string(),
+  role: z.string(),
+  site_location: z.string(),
+  order_index: z.number(),
+});
+
 export const trialFormSchema = z.object({
   trial_number: z.string().min(1, "Trial number is required"),
   date: z.string(),
@@ -41,6 +58,8 @@ export const trialFormSchema = z.object({
   materials: z.array(materialSchema),
   parameters: z.array(parameterSchema),
   costs: z.array(costSchema),
+  attachments: z.array(attachmentSchema),
+  suppliers: z.array(supplierSchema),
 });
 
 export type TrialFormValues = z.infer<typeof trialFormSchema>;

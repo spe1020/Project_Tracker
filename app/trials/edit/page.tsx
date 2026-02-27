@@ -69,12 +69,12 @@ function EditTrialContent() {
             Edit {trial.trial_number}
           </h1>
           <p className="text-muted-foreground mt-1">
-            Update trial documentation
+            {trial.pig_name ? `🐷 ${trial.pig_name} \u2014 ` : ""}Update trial documentation
           </p>
         </div>
       </div>
 
-      <TrialForm trial={trial} trialNumber={trial.trial_number} />
+      <TrialForm trial={trial} trialNumber={trial.trial_number} pigName={trial.pig_name || undefined} />
     </div>
   );
 }

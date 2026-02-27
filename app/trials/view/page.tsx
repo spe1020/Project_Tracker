@@ -11,6 +11,12 @@ import {
   Pencil,
   Printer,
   ArrowLeft,
+  Paperclip,
+  FileText,
+  Image,
+  Video,
+  File,
+  Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +39,9 @@ import { getTrial } from "@/lib/actions";
 import {
   formatDate,
   formatCurrency,
+  formatFileSize,
   formatStatus,
+  getFileTypeLabel,
   getStatusColor,
   getRecommendationLabel,
 } from "@/lib/utils";
@@ -108,8 +116,13 @@ function TrialViewContent() {
                 {formatStatus(trial.status)}
               </Badge>
             </div>
+            {trial.pig_name && (
+              <p className="text-base font-medium mt-1">
+                🐷 {trial.pig_name}
+              </p>
+            )}
             {trial.product_process && (
-              <p className="text-muted-foreground mt-1">
+              <p className="text-sm text-muted-foreground mt-0.5">
                 {trial.product_process}
               </p>
             )}
@@ -132,6 +145,7 @@ function TrialViewContent() {
       {/* Print header */}
       <div className="hidden print:block">
         <h1 className="text-2xl font-bold">{trial.trial_number}</h1>
+        {trial.pig_name && <p className="text-sm font-medium">🐷 {trial.pig_name}</p>}
         <p className="text-sm">{trial.product_process}</p>
       </div>
 
@@ -181,6 +195,39 @@ function TrialViewContent() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Suppliers */}
+      {trial.trial_suppliers && trial.trial_suppliers.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Suppliers</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Supplier Name</TableHead>
+                  <TableHead>Contact</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Site</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {trial.trial_suppliers.map((s) => (
+                  <TableRow key={s.id}>
+                    <TableCell className="font-medium">
+                      {s.supplier_name}
+                    </TableCell>
+                    <TableCell>{s.contact_name}</TableCell>
+                    <TableCell>{s.role}</TableCell>
+                    <TableCell>{s.site_location}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Objectives */}
       <Card>
@@ -313,6 +360,52 @@ function TrialViewContent() {
                 </TableRow>
               </TableBody>
             </Table>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Attachments */}
+      {trial.trial_attachments && trial.trial_attachments.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Paperclip className="h-4 w-4" />
+              Attachments
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {trial.trial_attachments.map((a) => (
+                <div
+                  key={a.id}
+                  className="flex items-center gap-3 rounded-md border p-3"
+                >
+                  <div className="text-muted-foreground">
+                    {a.file_type?.startsWith("image/") ? (
+                      <Image className="h-5 w-5" />
+                    ) : a.file_type?.startsWith("video/") ? (
+                      <Video className="h-5 w-5" />
+                    ) : a.file_type === "application/pdf" ? (
+                      <FileText className="h-5 w-5" />
+                    ) : (
+                      <File className="h-5 w-5" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{a.file_name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {getFileTypeLabel(a.file_type || "")}
+                      {a.file_size ? ` \u00b7 ${formatFileSize(a.file_size)}` : ""}
+                      {a.description ? ` \u2014 ${a.description}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Upload className="h-3 w-3" />
+                    <span>Upload pending</span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </CardContent>
         </Card>
       )}

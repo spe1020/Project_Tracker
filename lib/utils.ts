@@ -73,6 +73,34 @@ export function formatStatus(status: string): string {
   }
 }
 
+/** Format file size to human-readable string */
+export function formatFileSize(bytes: number | null): string {
+  if (bytes === null || bytes === 0) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const size = bytes / Math.pow(1024, i);
+  return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
+/** Get human-readable label for a MIME type */
+export function getFileTypeLabel(mimeType: string): string {
+  if (mimeType.startsWith("image/")) return "Image";
+  if (mimeType.startsWith("video/")) return "Video";
+  if (mimeType === "application/pdf") return "PDF";
+  if (
+    mimeType.includes("spreadsheet") ||
+    mimeType.includes("excel") ||
+    mimeType === "text/csv"
+  )
+    return "Spreadsheet";
+  if (mimeType.includes("word") || mimeType.includes("document"))
+    return "Document";
+  if (mimeType.includes("presentation") || mimeType.includes("powerpoint"))
+    return "Presentation";
+  if (mimeType.startsWith("text/")) return "Text";
+  return "File";
+}
+
 /** Calculate total from cost items */
 export function calculateTotal(
   costs: { estimated_cost: number | null; actual_cost: number | null }[],

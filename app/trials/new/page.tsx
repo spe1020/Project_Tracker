@@ -6,11 +6,13 @@ import { getNextTrialNumber } from "@/lib/actions";
 
 export default function NewTrialPage() {
   const [trialNumber, setTrialNumber] = useState<string | null>(null);
+  const [pigName, setPigName] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchData() {
-      const num = await getNextTrialNumber();
-      setTrialNumber(num);
+      const result = await getNextTrialNumber();
+      setTrialNumber(result.trialNumber);
+      setPigName(result.pigName);
     }
     fetchData();
   }, []);
@@ -31,11 +33,11 @@ export default function NewTrialPage() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">New Trial</h1>
         <p className="text-muted-foreground mt-1">
-          Create a new manufacturing trial documentation
+          Creating trial: {trialNumber} &bull; 🐷 {pigName}
         </p>
       </div>
 
-      <TrialForm trialNumber={trialNumber} />
+      <TrialForm trialNumber={trialNumber} pigName={pigName!} />
     </div>
   );
 }
